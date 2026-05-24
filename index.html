@@ -441,19 +441,55 @@ tr:hover td{background:var(--bg2)}
             <div style="position:relative;width:100%;height:200px;background:var(--bg2);border-radius:8px;overflow:hidden"><canvas id="main-chart" style="position:absolute;inset:0;width:100%;height:100%"></canvas></div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 320px;gap:14px;margin-bottom:14px">
-          <div class="card">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div style="display:grid;grid-template-columns:750px 1fr 1fr;gap:14px;margin-bottom:14px">
+          <div class="card" style="padding:0;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--border2)">
               <div class="section-title" style="margin-bottom:0">Calendario econ&oacute;mico</div>
               <div style="display:flex;gap:8px;align-items:center">
-                <span id="eco-cal-status" style="font-size:10px;color:var(--muted)">Cargando...</span>
-                <select id="eco-tz" onchange="renderEcoCalendar()" style="padding:5px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);font-size:11px;font-family:var(--font)"><option value="0">UTC+0</option><option value="1">UTC+1</option><option value="2" selected>UTC+2 (Roma)</option><option value="-4">UTC-4 (NY)</option><option value="-5">UTC-5 (Chicago)</option><option value="9">UTC+9 (Tokyo)</option></select>
-                <select id="eco-day-filter" onchange="renderEcoCalendar()" style="padding:5px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);font-size:11px;font-family:var(--font)"><option value="all">Toda la semana</option><option value="today">Hoy</option><option value="tomorrow">Ma&ntilde;ana</option></select>
-                <select id="eco-impact-filter" onchange="renderEcoCalendar()" style="padding:5px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);font-size:11px;font-family:var(--font)"><option value="all">Todos</option><option value="high">&#128308; Alto</option><option value="med">&#128993; Medio</option><option value="low">&#128994; Bajo</option></select>
+                <a href="https://www.investing.com/economic-calendar/" target="_blank" rel="noopener" style="font-size:10px;color:var(--cyan);text-decoration:none;display:flex;align-items:center;gap:4px"><i class="ti ti-external-link" style="font-size:11px"></i>Investing.com</a>
+                <a href="https://www.forexfactory.com/calendar" target="_blank" rel="noopener" style="font-size:10px;color:var(--muted2);text-decoration:none;display:flex;align-items:center;gap:4px"><i class="ti ti-external-link" style="font-size:11px"></i>Forex Factory</a>
               </div>
             </div>
-            <div id="eco-calendar"></div>
+            <iframe src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=dateseparators,title,timezone,filters&countries=5,72,22,17,32,35,43,25,54,145&calType=week&timeZone=18&lang=12" width="100%" height="260" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0" style="display:block;border:none"></iframe>
           </div>
+          <div class="card" style="padding:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div class="section-title" style="margin-bottom:0">Commodity Live</div>
+              <select id="commodity-selector" onchange="renderCommodityWidget()" style="padding:3px 6px;border:1px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--cyan);font-size:10px;font-family:var(--font);cursor:pointer">
+                <option value="CL">Petróleo WTI</option>
+                <option value="BZ">Petróleo Brent</option>
+                <option value="NG">Gas Natural</option>
+                <option value="GC">Oro</option>
+                <option value="SI">Plata</option>
+                <option value="HG">Cobre</option>
+                <option value="ZW">Trigo</option>
+                <option value="ZC">Maíz</option>
+              </select>
+            </div>
+            <div id="commodity-widget"></div>
+          </div>
+          <div class="card" style="padding:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div class="section-title" style="margin-bottom:0">Cripto Live</div>
+              <select id="crypto-selector" onchange="renderCryptoWidget()" style="padding:3px 6px;border:1px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--cyan);font-size:10px;font-family:var(--font);cursor:pointer">
+                <option value="BTC">Bitcoin (BTC)</option>
+                <option value="ETH">Ethereum (ETH)</option>
+                <option value="SOL">Solana (SOL)</option>
+                <option value="BNB">BNB (BNB)</option>
+                <option value="XRP">Ripple (XRP)</option>
+                <option value="ADA">Cardano (ADA)</option>
+                <option value="DOGE">Dogecoin (DOGE)</option>
+                <option value="AVAX">Avalanche (AVAX)</option>
+                <option value="DOT">Polkadot (DOT)</option>
+                <option value="MATIC">Polygon (MATIC)</option>
+              </select>
+            </div>
+            <div id="crypto-widget"></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+          <div class="card" style="padding:14px"><div class="section-title">Fear &amp; Greed Index</div><div id="fg-widget"></div></div>
+          <div class="card" style="padding:14px"><div class="section-title">Correlaciones</div><div id="corr-widget"></div></div>
           <div class="card" style="padding:14px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
               <div class="section-title" style="margin-bottom:0" id="futures-title">Futuros Oro &mdash; Contratos</div>
@@ -482,28 +518,6 @@ tr:hover td{background:var(--bg2)}
             <div id="futures-subtitle" style="font-size:10px;color:var(--muted);margin-bottom:10px">GC &mdash; CME Group &middot; Oz Troy</div>
             <div id="futures-table"></div>
             <div id="futures-most-active" style="margin-top:12px"></div>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
-          <div class="card" style="padding:14px"><div class="section-title">Fear &amp; Greed Index</div><div id="fg-widget"></div></div>
-          <div class="card" style="padding:14px"><div class="section-title">Correlaciones</div><div id="corr-widget"></div></div>
-          <div class="card" style="padding:14px">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-              <div class="section-title" style="margin-bottom:0">Cripto Live</div>
-              <select id="crypto-selector" onchange="renderCryptoWidget()" style="padding:3px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--cyan);font-size:11px;font-family:var(--font);cursor:pointer">
-                <option value="BTC">Bitcoin (BTC)</option>
-                <option value="ETH">Ethereum (ETH)</option>
-                <option value="SOL">Solana (SOL)</option>
-                <option value="BNB">BNB (BNB)</option>
-                <option value="XRP">Ripple (XRP)</option>
-                <option value="ADA">Cardano (ADA)</option>
-                <option value="DOGE">Dogecoin (DOGE)</option>
-                <option value="AVAX">Avalanche (AVAX)</option>
-                <option value="DOT">Polkadot (DOT)</option>
-                <option value="MATIC">Polygon (MATIC)</option>
-              </select>
-            </div>
-            <div id="crypto-widget"></div>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 340px;gap:14px;margin-bottom:14px">
@@ -1878,6 +1892,45 @@ function renderCryptoWidget(){
 
 setInterval(renderCryptoWidget,6000);
 
+// ---- COMMODITY WIDGET ----
+var COMMODITY_DATA={
+  CL:{name:'Petróleo WTI',sym:'CL',unit:'USD/barril',price:78.42,chg:1.24,chgPct:1.60,high:79.18,low:77.05,vol:'892K',ath:130.50},
+  BZ:{name:'Petróleo Brent',sym:'BZ',unit:'USD/barril',price:82.14,chg:0.98,chgPct:1.21,high:82.90,low:80.82,vol:'644K',ath:147.50},
+  NG:{name:'Gas Natural',sym:'NG',unit:'USD/MMBtu',price:3.42,chg:-0.08,chgPct:-2.29,high:3.54,low:3.38,vol:'284K',ath:10.028},
+  GC:{name:'Oro',sym:'GC',unit:'USD/Oz Troy',price:3284.40,chg:26.80,chgPct:0.82,high:3291.20,low:3249.80,vol:'84K',ath:3500.05},
+  SI:{name:'Plata',sym:'SI',unit:'USD/Oz Troy',price:32.18,chg:0.54,chgPct:1.71,high:32.84,low:31.92,vol:'28K',ath:49.51},
+  HG:{name:'Cobre',sym:'HG',unit:'USD/libra',price:4.82,chg:0.12,chgPct:2.55,high:4.88,low:4.74,vol:'42K',ath:5.20},
+  ZW:{name:'Trigo',sym:'ZW',unit:'USC/bushel',price:542.25,chg:-8.50,chgPct:-1.54,high:551.00,low:538.50,vol:'38K',ath:1363.50},
+  ZC:{name:'Maíz',sym:'ZC',unit:'USC/bushel',price:468.75,chg:4.25,chgPct:0.92,high:471.00,low:463.25,vol:'62K',ath:843.75}
+};
+
+function renderCommodityWidget(){
+  var sel=document.getElementById('commodity-selector');
+  var key=sel?sel.value:'CL';
+  var c=COMMODITY_DATA[key]||COMMODITY_DATA.CL;
+  // Simulate small price movement
+  var v=c.price*0.0008;
+  c.price=parseFloat((c.price+(Math.random()-.48)*v).toFixed(c.price>100?2:4));
+  c.chgPct=parseFloat((c.chg/c.price*100).toFixed(2));
+  // Auto-update ATH
+  try{var ak='comm-ath-'+key;var sa=parseFloat(localStorage.getItem(ak))||c.ath;if(c.price>sa){sa=c.price;localStorage.setItem(ak,sa);}c.ath=sa;}catch(e){}
+  var up=c.chgPct>=0;
+  var el=document.getElementById('commodity-widget');if(!el)return;
+  el.innerHTML='<div style="text-align:center;padding:4px 0">'
+    +'<div style="font-size:10px;color:var(--muted);margin-bottom:4px">'+c.name+' ('+c.sym+')</div>'
+    +'<div style="font-size:28px;font-weight:800;color:var(--text);font-family:monospace;letter-spacing:-1px;line-height:1">'+c.price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:c.price<10?4:2})+'</div>'
+    +'<div style="font-size:9px;color:var(--muted);margin-bottom:4px">'+c.unit+'</div>'
+    +'<div style="font-size:13px;font-weight:700;color:'+(up?'var(--green)':'var(--red)')+'">'+(up?'▲':'▼')+' '+(up?'+':'')+c.chgPct.toFixed(2)+'%</div>'
+    +'<div style="display:flex;justify-content:center;gap:10px;margin-top:8px;font-size:10px;color:var(--muted)">'
+    +'<div>H: <span style="color:var(--green)">'+c.high.toLocaleString()+'</span></div>'
+    +'<div>L: <span style="color:var(--red)">'+c.low.toLocaleString()+'</span></div>'
+    +'</div>'
+    +'<div style="font-size:10px;color:var(--muted);margin-top:4px">Vol: <span style="color:var(--text)">'+c.vol+'</span></div>'
+    +(c.ath?'<div style="margin-top:8px;padding:5px 8px;background:rgba(240,180,41,.08);border:1px solid rgba(240,180,41,.25);border-radius:6px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">ATH</span><span style="font-size:11px;font-weight:700;color:var(--gold);font-family:monospace">'+c.ath.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span></div>':'')
+    +'</div>';
+}
+setInterval(renderCommodityWidget,8000);
+
 // ---- COT DATA ----
 var COT_DATA={
   GC:{name:'Oro',sym:'GC',reportDate:'2026-05-13',specs:{long:287420,short:89340},comm:{long:102840,short:298620},history:[{w:'28 abr',net:180420},{w:'05 may',net:188340},{w:'12 may',net:198080}]},
@@ -2132,7 +2185,7 @@ function fmtP(sym,p){if(!p)return '--';if(['BTC/USD','NAS100','US30','SP500'].in
 
 function initTerminal(){
   if(!termInited){initTermData();termInited=true;}
-  renderTicker();renderWatchlist();renderChartPanel();renderTermNews();renderEcoCalendar();renderFuturesTable();renderFearGreed();renderCorrelations();renderTermSessions();renderCryptoWidget();renderHotStories();renderFedBarometer();renderImpactEvents();renderCOT();
+  renderTicker();renderWatchlist();renderChartPanel();renderTermNews();renderEcoCalendar();renderFuturesTable();renderFearGreed();renderCorrelations();renderTermSessions();renderCryptoWidget();renderCommodityWidget();renderHotStories();renderFedBarometer();renderImpactEvents();renderCOT();
   loadFMPCalendar();
   setInterval(loadFMPCalendar,60*60*1000);
   if(termInterval)clearInterval(termInterval);

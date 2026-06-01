@@ -268,6 +268,7 @@ tr:hover td{background:var(--bg2)}
       <button class="nav-item" onclick="showPage('terminal')"><i class="ti ti-chart-candle"></i>Terminal</button>
       <div class="nav-group">An&aacute;lisis</div>
       <button class="nav-item" onclick="showPage('stats')"><i class="ti ti-chart-bar"></i>Estad&iacute;sticas</button>
+      <button class="nav-item" onclick="showPage('invested')"><i class="ti ti-trending-up"></i>Invertido</button>
       <div class="nav-group">Herramientas</div>
       <button class="nav-item" onclick="showPage('tools')"><i class="ti ti-tools"></i>Mis indicadores</button>
       <button class="nav-item" onclick="showPage('diarios')"><i class="ti ti-book"></i>Diarios</button>
@@ -296,6 +297,8 @@ tr:hover td{background:var(--bg2)}
         <button class="btn ghost" id="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar tema" style="padding:6px 9px"><i class="ti ti-sun" id="theme-icon" style="font-size:15px"></i></button>
         <div class="user-chip" onclick="showPage('perfil')" style="cursor:pointer" title="Mi perfil"><i class="ti ti-user" id="user-chip-icon"></i><span id="user-name-chip">Usuario</span></div>
         <button class="btn primary" id="topbar-action-btn" onclick="openTradeModal()"><i class="ti ti-plus" style="font-size:14px"></i>Nuevo trade</button>
+        <button class="btn" id="topbar-deposit-btn" style="display:none" onclick="openDepositModal('deposit')"><i class="ti ti-arrow-down" style="font-size:14px;color:var(--green)"></i>Depósito</button>
+        <button class="btn" id="topbar-withdraw-btn" style="display:none" onclick="openDepositModal('withdrawal')"><i class="ti ti-arrow-up" style="font-size:14px;color:var(--red)"></i>Retiro</button>
       </div>
     </div>
     <div class="content">
@@ -314,7 +317,23 @@ tr:hover td{background:var(--bg2)}
         </div>
       </div>
 
-      <div id="page-accounts" class="page"><div class="accounts-grid" id="accounts-grid"></div></div>
+      <div id="page-accounts" class="page">
+        <div class="accounts-grid" id="accounts-grid"></div>
+        <div style="margin-top:16px">
+          <button class="btn sm" onclick="showArchivedAccounts()" style="color:var(--muted2)"><i class="ti ti-archive" style="font-size:13px"></i>Cuentas archivadas</button>
+        </div>
+        <div id="archived-accounts-section" style="display:none;margin-top:16px">
+          <div style="font-size:11px;color:var(--cyan);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px"><i class="ti ti-archive"></i>Cuentas archivadas</div>
+          <div class="accounts-grid" id="archived-accounts-grid"></div>
+        </div>
+      </div>
+      <div id="page-invested" class="page">
+        <div class="grid3" style="margin-bottom:16px" id="invested-kpis"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+          <div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="section-title" style="margin-bottom:0">Inversiones</div><button class="btn sm primary" onclick="openInvestmentModal()"><i class="ti ti-plus"></i>Agregar</button></div><div id="investments-list"></div></div>
+          <div class="card"><div class="section-title">ROI en el tiempo</div><div style="position:relative;height:200px"><canvas id="roiChart"></canvas></div></div>
+        </div>
+      </div>
 
       <div id="page-account-detail" class="page">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
@@ -720,9 +739,10 @@ tr:hover td{background:var(--bg2)}
     <div class="form-grid">
       <div class="form-group"><label>Nombre</label><input id="ac-name" placeholder="Ej. FTMO Real 1"></div>
       <div class="form-group"><label>Broker</label><input id="ac-broker" placeholder="Ej. FTMO, Apex..."></div>
-      <div class="form-group"><label>Tipo</label><select id="ac-type" onchange="onTypeChange()"><option value="real">Real</option><option value="demo">Demo</option><option value="challenge">Challenge</option></select></div>
+      <div class="form-group"><label>Tipo</label><select id="ac-type" onchange="onTypeChange()"><option value="real">Real</option><option value="instant">Real Instant</option><option value="demo">Demo</option><option value="challenge">Challenge</option></select></div>
       <div class="form-group"><label>Moneda</label><select id="ac-currency"><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option></select></div>
       <div class="form-group"><label>Balance inicial</label><input type="number" id="ac-balance" placeholder="10000" step="any" oninput="recalcGoals()"></div>
+      <div class="form-group"><label>Precio pagado ($) <span style="font-size:10px;color:var(--muted)">(opcional — se agrega a Invertido)</span></label><input type="number" id="ac-price-paid" placeholder="Ej. 150" step="0.01"></div>
       <div class="form-group"><label>N&uacute;mero de cuenta</label><input id="ac-number" placeholder="Opcional"></div>
     </div>
     <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px;margin-bottom:14px">
@@ -962,6 +982,36 @@ tr:hover td{background:var(--bg2)}
       </div>
       <button class="btn primary" onclick="saveImpactManual()" style="width:100%"><i class="ti ti-check"></i>Guardar</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL DEPÓSITO/RETIRO -->
+<div class="modal-overlay" id="deposit-modal">
+  <div class="modal" style="width:380px">
+    <div class="modal-header"><h2 id="deposit-modal-title">Depósito</h2><button class="close-btn" onclick="document.getElementById('deposit-modal').classList.remove('open')"><i class="ti ti-x"></i></button></div>
+    <input type="hidden" id="dep-type">
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1"><label>Cuenta</label><select id="dep-account" style="width:100%"></select></div>
+      <div class="form-group"><label>Monto ($)</label><input type="number" id="dep-amount" placeholder="0.00" step="0.01"></div>
+      <div class="form-group"><label>Fecha</label><input type="date" id="dep-date"></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Notas (opcional)</label><input type="text" id="dep-notes" placeholder="Observaciones..."></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="document.getElementById('deposit-modal').classList.remove('open')">Cancelar</button><button class="btn primary" onclick="saveDeposit()"><i class="ti ti-check"></i>Guardar</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="investment-modal">
+  <div class="modal" style="width:420px">
+    <div class="modal-header"><h2>Nueva inversión</h2><button class="close-btn" onclick="document.getElementById('investment-modal').classList.remove('open')"><i class="ti ti-x"></i></button></div>
+    <input type="hidden" id="inv-edit-id">
+    <div class="form-grid">
+      <div class="form-group"><label>Tipo</label><select id="inv-type" style="width:100%"><option value="account">Cuenta de fondeo</option><option value="course">Curso / formación</option><option value="tool">Herramienta / software</option><option value="other">Otro</option></select></div>
+      <div class="form-group"><label>Nombre</label><input type="text" id="inv-name" placeholder="Ej. FTMO $25K, Curso ICT..."></div>
+      <div class="form-group"><label>Monto invertido ($)</label><input type="number" id="inv-amount" placeholder="0.00" step="0.01"></div>
+      <div class="form-group"><label>Fecha</label><input type="date" id="inv-date"></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Notas (opcional)</label><input type="text" id="inv-notes" placeholder="Observaciones..."></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="document.getElementById('investment-modal').classList.remove('open')">Cancelar</button><button class="btn primary" onclick="saveInvestment()"><i class="ti ti-check"></i>Guardar</button></div>
   </div>
 </div>
 
@@ -1289,8 +1339,6 @@ auth.onAuthStateChanged(function(user){
       if(doc.exists&&doc.data().isAdmin)isAdmin=true;
       if(isAdmin){
         document.getElementById('admin-nav').style.display='block';
-        document.getElementById('btn-new-tool').style.display='inline-flex';
-        document.getElementById('btn-new-diario').style.display='inline-flex';
         // Re-render after admin confirmed so edit/delete buttons appear
         if(document.getElementById('page-diarios').classList.contains('active'))renderDiariosGrid();
         if(document.getElementById('page-tools').classList.contains('active'))renderToolsGrid();
@@ -1303,7 +1351,7 @@ auth.onAuthStateChanged(function(user){
     document.getElementById('auth-screen').style.display='none';
     document.getElementById('main-app').style.display='flex';
     document.getElementById('user-name-chip').textContent=user.displayName||user.email.split('@')[0];
-    listenAccounts();listenTrades();listenTools();listenDiarios();
+    listenAccounts();listenTrades();listenTools();listenDiarios();loadInvestments();
   }else{
     cu=null;isAdmin=false;
     document.getElementById('auth-screen').style.display='flex';
@@ -1313,7 +1361,7 @@ auth.onAuthStateChanged(function(user){
 
 function listenAccounts(){
   db.collection('users').doc(cu.uid).collection('accounts').orderBy('createdAt','asc').onSnapshot(function(snap){
-    accounts=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});
+    accounts=snap.docs.filter(function(d){return d.data().status!=='archived';}).map(function(d){return Object.assign({id:d.id},d.data());});
     populateSelects();renderAccountsPage();renderDashboard();
   });
 }
@@ -1323,7 +1371,8 @@ function listenTrades(){
     renderDashboard();checkGoals();
     if(document.getElementById('page-trades').classList.contains('active'))renderTradesTable();
     if(document.getElementById('page-stats').classList.contains('active'))renderStats();
-    if(document.getElementById('page-accounts').classList.contains('active'))renderAccountsPage();
+    if(p==='accounts'){checkAccountExpiry();}
+  if(p==='invested'){renderInvestedPage();}
     if(document.getElementById('page-calendar').classList.contains('active'))renderCalendar();
   });
 }
@@ -1375,18 +1424,24 @@ function showPage(p){
   document.getElementById('page-title').textContent=PAGES[p]||p;
   document.getElementById('breadcrumb-sub').textContent=SUBS[p]||'';
   var ab=document.getElementById('topbar-action-btn');
-  if(p==='accounts'){ab.innerHTML='<i class="ti ti-plus" style="font-size:14px"></i>Nueva cuenta';ab.onclick=function(){openAccountModal();};}
-  else if(p==='tools'&&isAdmin){ab.innerHTML='<i class="ti ti-plus" style="font-size:14px"></i>Nuevo indicador';ab.onclick=function(){openToolModal();};}
-  else if(p==='diarios'&&isAdmin){ab.innerHTML='<i class="ti ti-plus" style="font-size:14px"></i>Nuevo diario';ab.onclick=function(){openDiarioModal();};}
-  else{ab.innerHTML='<i class="ti ti-plus" style="font-size:14px"></i>Nuevo trade';ab.onclick=function(){openTradeModal();};}
+  if(p==='accounts'){ab.style.display='inline-flex';ab.innerHTML='<i class="ti ti-plus" style="font-size:14px"></i>Nueva cuenta';ab.onclick=function(){openAccountModal();};}
+  else if(p==='trades'){ab.style.display='inline-flex';ab.innerHTML='<i class="ti ti-plus" style="font-size:14px"></i>Nuevo trade';ab.onclick=function(){openTradeModal();};}
+  else if(p==='tools'&&isAdmin){ab.style.display='inline-flex';ab.innerHTML='<i class="ti ti-plus" style="font-size:14px"></i>Nuevo indicador';ab.onclick=function(){openToolModal();};}
+  else if(p==='diarios'&&isAdmin){ab.style.display='inline-flex';ab.innerHTML='<i class="ti ti-plus" style="font-size:14px"></i>Nuevo diario';ab.onclick=function(){openDiarioModal();};}
+  else{ab.style.display='none';}
+  var db1=document.getElementById('topbar-deposit-btn');
+  var wb1=document.getElementById('topbar-withdraw-btn');
+  if(db1)db1.style.display=p==='trades'?'inline-flex':'none';
+  if(wb1)wb1.style.display=p==='trades'?'inline-flex':'none';
   if(p==='dashboard')renderDashboard();
-  if(p==='accounts')renderAccountsPage();
+  if(p==='accounts'){checkAccountExpiry();renderAccountsPage();}
   if(p==='trades')renderTradesTable();
   if(p==='calendar')renderCalendar();
   if(p==='terminal')initTerminal();
   if(p==='stats')renderStats();
   if(p==='tools')renderToolsGrid();
   if(p==='diarios')renderDiariosGrid();
+  if(p==='invested')renderInvestedPage();
   if(p==='soporte'){document.getElementById('sup-title').value='';document.getElementById('sup-desc').value='';document.getElementById('sup-img-preview').style.display='none';supImgData='';}
   if(p==='perfil')loadPerfil();
   if(p==='admin'){if(!adminUnlocked){document.getElementById('admin-lock-screen').style.display='flex';document.getElementById('admin-content').style.display='none';document.getElementById('admin-pass-input').value='';document.getElementById('admin-pass-err').textContent='';}else loadAdminUsers();}
@@ -1431,14 +1486,15 @@ function renderAccountDetail(acc){
   if(kpiEl)kpiEl.innerHTML='<div class="metric-card"><div class="metric-label">Balance actual</div><div class="metric-value '+(cum>=0?'pos':'neg')+'">$'+currentBal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div><div class="metric-card"><div class="metric-label">P&L total</div><div class="metric-value '+(cum>=0?'pos':'neg')+'">'+(cum>=0?'+':'')+'$'+cum.toFixed(2)+'</div></div><div class="metric-card"><div class="metric-label">Nivel drawdown</div><div class="metric-value neg">$'+currentDD.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div><div class="metric-card"><div class="metric-label">Margen sobre DD</div><div class="metric-value '+(ddUsed>0?'pos':'neg')+'">'+(ddUsed>=0?'+':'')+'$'+ddUsed.toFixed(2)+'</div></div>';
   // Reloj en detalle
   var clockEl=document.getElementById('detail-clock');
-  if(clockEl){clockEl.innerHTML=renderAccountClock(acc);clockEl.dataset.accId=acc.id;}
+  if(clockEl){clockEl.innerHTML=renderAccountClockWithProgress(acc,cum);clockEl.dataset.accId=acc.id;clockEl.dataset.accPnl=cum;}
   if(!window._detailClockRunning){
     window._detailClockRunning=true;
     setInterval(function(){
       var el=document.getElementById('detail-clock');
       if(!el||!el.dataset.accId)return;
       var a=accounts.find(function(x){return x.id===el.dataset.accId;});
-      if(a)el.innerHTML=renderAccountClock(a);
+      var pnl=parseFloat(el.dataset.accPnl)||0;
+      if(a)el.innerHTML=renderAccountClockWithProgress(a,pnl);
     },1000);
   }
   var ctx=document.getElementById('detailChart');
@@ -1485,7 +1541,7 @@ function openAccountModal(id){
       if(a.timerMode==='limit'){setTimerMode('limit');document.getElementById('ac-start-date').value=a.startDate||'';document.getElementById('ac-end-date').value=a.endDate||'';}
       if(a.type==='challenge'){document.getElementById('challenge-options').style.display='block';document.getElementById('single-goal-options').style.display='none';var ph=a.phases||1;document.getElementById('ac-phases').value=ph;document.getElementById('phase2-block').style.display=ph===2?'block':'none';document.getElementById('ac-p1-pct').value=a.p1Pct||'';document.getElementById('ac-p1-amt').value=a.p1Amt||'';document.getElementById('ac-p2-pct').value=a.p2Pct||'';document.getElementById('ac-p2-amt').value=a.p2Amt||'';}
       else{document.getElementById('ac-goal-pct').value=a.goalPct||'';document.getElementById('ac-goal-amt').value=a.goalAmt||'';}
-      recalcGoals();}
+      recalcGoals();document.getElementById('ac-price-paid').value=a.pricePaid||'';}
   }
   document.getElementById('account-modal').classList.add('open');
 }
@@ -1493,15 +1549,53 @@ function closeAccountModal(){document.getElementById('account-modal').classList.
 function saveAccount(){
   var name=document.getElementById('ac-name').value.trim();if(!name){alert('El nombre es obligatorio.');return;}
   var type=document.getElementById('ac-type').value,ib=parseFloat(document.getElementById('ac-balance').value)||0;
+  var pricePaid=parseFloat(document.getElementById('ac-price-paid').value)||0;
   var timerMode=document.getElementById('timer-no-limit').classList.contains('active')?'nolimit':'limit';
-  var a={name:name,broker:document.getElementById('ac-broker').value.trim(),type:type,currency:document.getElementById('ac-currency').value,initialBalance:ib,number:document.getElementById('ac-number').value.trim(),ddType:document.getElementById('ac-dd-type').value,ddPct:parseFloat(document.getElementById('ac-dd-pct').value)||0,dlPct:parseFloat(document.getElementById('ac-dl-pct').value)||0,timerMode:timerMode,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+  var a={name:name,broker:document.getElementById('ac-broker').value.trim(),type:type,currency:document.getElementById('ac-currency').value,initialBalance:ib,number:document.getElementById('ac-number').value.trim(),ddType:document.getElementById('ac-dd-type').value,ddPct:parseFloat(document.getElementById('ac-dd-pct').value)||0,dlPct:parseFloat(document.getElementById('ac-dl-pct').value)||0,timerMode:timerMode,pricePaid:pricePaid,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
   if(timerMode==='limit'){a.startDate=document.getElementById('ac-start-date').value;a.endDate=document.getElementById('ac-end-date').value;}
   else{var ns=document.getElementById('ac-nolimit-start-date').value;if(ns)a.startDate=ns;}
-  if(type==='challenge'){var ph=parseInt(document.getElementById('ac-phases').value),p1p=parseFloat(document.getElementById('ac-p1-pct').value)||0,p2p=parseFloat(document.getElementById('ac-p2-pct').value)||0;a.phases=ph;a.currentPhase=1;a.p1Pct=p1p;a.p1Amt=ib*p1p/100;a.p2Pct=p2p;a.p2Amt=ib*p2p/100;}
+  if(type==='challenge'){var ph=parseInt(document.getElementById('ac-phases').value),p1p=parseFloat(document.getElementById('ac-p1-pct').value)||0,p2p=parseFloat(document.getElementById('ac-p2-pct').value)||0;a.phases=ph;a.p1Pct=p1p;a.p1Amt=ib*p1p/100;a.p2Pct=p2p;a.p2Amt=ib*p2p/100;if(!editAccountId)a.currentPhase=1;}
   else{var gp=parseFloat(document.getElementById('ac-goal-pct').value)||0;a.goalPct=gp;a.goalAmt=ib*gp/100;a.goalReached=false;}
   var col=db.collection('users').doc(cu.uid).collection('accounts');
-  if(editAccountId)col.doc(editAccountId).update(a);
-  else{a.createdAt=firebase.firestore.FieldValue.serverTimestamp();col.add(a);}
+  if(editAccountId){
+    var prevPricePaid=0;
+    var prevAcc=accounts.find(function(x){return x.id===editAccountId;});
+    if(prevAcc)prevPricePaid=prevAcc.pricePaid||0;
+    col.doc(editAccountId).update(a);
+    // If price paid changed, create investment for the difference
+    if(pricePaid>0 && pricePaid!==prevPricePaid){
+      var diff=pricePaid-prevPricePaid;
+      if(diff>0){
+        db.collection('users').doc(cu.uid).collection('investments').add({
+          name:name+(a.broker?' ('+a.broker+')':''),
+          amount:diff,
+          type:'account',
+          date:new Date().toISOString().slice(0,10),
+          notes:'Actualizado desde edición de cuenta'+(prevPricePaid>0?' (anterior: $'+prevPricePaid+')':''),
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        }).then(function(){
+          showToast('Inversión de $'+diff+' añadida a Invertido','cyan','');
+        }).catch(function(err){
+          showToast('Error al guardar inversión: '+err.message,'red','');
+        });
+      }
+    }
+  }
+  else{
+    a.createdAt=firebase.firestore.FieldValue.serverTimestamp();
+    col.add(a).then(function(){
+      if(pricePaid>0){
+        db.collection('users').doc(cu.uid).collection('investments').add({
+          name:name+(a.broker?' ('+a.broker+')':''),
+          amount:pricePaid,
+          type:'account',
+          date:new Date().toISOString().slice(0,10),
+          notes:'Creado automáticamente al crear cuenta',
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+    });
+  }
   closeAccountModal();
 }
 function deleteAccount(id){if(!confirm('Eliminar esta cuenta?'))return;db.collection('users').doc(cu.uid).collection('accounts').doc(id).delete();}
@@ -1548,6 +1642,194 @@ function renderAccountClock(a){
 }
 function pad2(n){return String(n).padStart(2,'0');}
 
+// ---- PROGRESS BAR IN CLOCK ----
+function renderAccountClockWithProgress(a,pnl){
+  var phase=a.currentPhase||1;
+  var goal=a.type==='challenge'?(phase===1?(a.p1Amt||0):(a.p2Amt||0)):(a.goalAmt||0);
+  var progressBar='';
+  if(goal>0){
+    var pct=Math.min(pnl/goal*100,100);
+    var col=pct>=100?'var(--green)':pct>=50?'var(--cyan)':'var(--gold)';
+    progressBar='<div style="margin-bottom:10px;padding:10px 12px;background:var(--bg3);border-radius:8px">'
+      +'<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px">'
+      +'<span style="color:var(--muted)">Progreso '+(a.type==='challenge'?'Fase '+phase:'meta')+'</span>'
+      +'<span style="font-weight:700;color:'+col+'">'+pct.toFixed(1)+'%</span>'
+      +'</div>'
+      +'<div style="height:5px;background:var(--border2);border-radius:3px;overflow:hidden;margin-bottom:6px">'
+      +'<div style="height:100%;width:'+Math.max(pct,0)+'%;background:'+col+';border-radius:3px;transition:width .3s"></div></div>'
+      +'<div style="display:flex;justify-content:space-between;font-size:10px">'
+      +'<span style="color:var(--green)">Ganado: '+(pnl>=0?'+':'')+'$'+pnl.toFixed(2)+'</span>'
+      +'<span style="color:var(--muted)">Faltante: $'+Math.max(goal-pnl,0).toFixed(2)+'</span>'
+      +'</div>'
+      +'</div>';
+  }
+  return progressBar+renderAccountClock(a);
+}
+
+// ---- ARCHIVED ACCOUNTS ----
+var archivedVisible=false;
+function showArchivedAccounts(){
+  archivedVisible=!archivedVisible;
+  var sec=document.getElementById('archived-accounts-section');
+  if(sec)sec.style.display=archivedVisible?'block':'none';
+  if(archivedVisible)renderArchivedAccounts();
+}
+function renderArchivedAccounts(){
+  var grid=document.getElementById('archived-accounts-grid');if(!grid)return;
+  db.collection('users').doc(cu.uid).collection('accounts').where('status','==','archived').get().then(function(snap){
+    if(snap.empty){grid.innerHTML='<div style="color:var(--muted);font-size:12px;padding:16px">Sin cuentas archivadas</div>';return;}
+    grid.innerHTML=snap.docs.map(function(doc){
+      var a=doc.data();
+      var failDate=a.archivedAt&&a.archivedAt.toDate?a.archivedAt.toDate().toLocaleDateString('es-ES'):'--';
+      return '<div class="account-card" style="opacity:.7;border:1px solid rgba(255,69,96,.3)">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+        +'<div style="font-size:14px;font-weight:600">'+a.name+'</div>'
+        +'<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(255,69,96,.15);color:var(--red);border:1px solid rgba(255,69,96,.3)">FALLIDA</span>'
+        +'</div>'
+        +'<div style="font-size:11px;color:var(--muted);margin-bottom:6px">'+(a.broker||'')+'</div>'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px">'
+        +'<div style="color:var(--muted)">Archivada<div style="color:var(--text);font-weight:600">'+failDate+'</div></div>'
+        +'<div style="color:var(--muted)">Balance inicial<div style="color:var(--text);font-weight:600">$'+(a.initialBalance||0).toLocaleString()+'</div></div>'
+        +'</div>'
+        +'<div style="font-size:10px;color:var(--muted);margin-top:8px">'+( a.archiveReason||'Tiempo expirado sin objetivo')+'</div>'
+        +'</div>';
+    }).join('');
+  });
+}
+
+// Check if any account should be archived (call on accounts page load)
+function checkAccountExpiry(){
+  if(!cu)return;
+  var now=new Date();
+  accounts.forEach(function(a){
+    if(a.status==='archived')return;
+    if(a.timerMode!=='limit'||!a.endDate)return;
+    var end=new Date(a.endDate+'T23:59:59');
+    if(now<=end)return;
+    // Check if goal was reached
+    var pnl=getAccPnl(a.id);
+    var goal=a.type==='challenge'?(a.currentPhase===1?(a.p1Amt||0):(a.p2Amt||0)):(a.goalAmt||0);
+    if(pnl>=goal&&goal>0)return; // goal reached, don't archive
+    // Archive it
+    db.collection('users').doc(cu.uid).collection('accounts').doc(a.id).update({
+      status:'archived',
+      archivedAt:firebase.firestore.FieldValue.serverTimestamp(),
+      archiveReason:'Tiempo expirado sin alcanzar el objetivo'
+    }).then(function(){
+      showToast('Cuenta "'+a.name+'" archivada — tiempo expirado','gold','');
+      // Reload accounts from Firestore so the card disappears immediately
+      db.collection('users').doc(cu.uid).collection('accounts').get().then(function(snap){
+        accounts=snap.docs.filter(function(d){return d.data().status!=='archived';}).map(function(d){return Object.assign({id:d.id},d.data());});
+        renderAccountsPage();
+      });
+    });
+  });
+}
+
+// ---- INVESTMENTS ----
+var investments=[];
+function loadInvestments(){
+  if(!cu)return;
+  db.collection('users').doc(cu.uid).collection('investments').onSnapshot(function(snap){
+    investments=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});
+    investments.sort(function(a,b){return (b.date||'')>(a.date||'')?1:-1;});
+    if(document.getElementById('page-invested').classList.contains('active'))renderInvestedPage();
+  },function(err){
+    console.error('investments listener error:',err);
+    db.collection('users').doc(cu.uid).collection('investments').get().then(function(snap){
+      investments=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});
+      if(document.getElementById('page-invested').classList.contains('active'))renderInvestedPage();
+    });
+  });
+}
+function openInvestmentModal(id){
+  document.getElementById('inv-edit-id').value=id||'';
+  document.getElementById('inv-name').value='';
+  document.getElementById('inv-amount').value='';
+  document.getElementById('inv-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('inv-notes').value='';
+  document.getElementById('inv-type').value='account';
+  if(id){var inv=investments.find(function(x){return x.id===id;});if(inv){document.getElementById('inv-name').value=inv.name||'';document.getElementById('inv-amount').value=inv.amount||'';document.getElementById('inv-date').value=inv.date||'';document.getElementById('inv-notes').value=inv.notes||'';document.getElementById('inv-type').value=inv.type||'account';}}
+  document.getElementById('investment-modal').classList.add('open');
+}
+function saveInvestment(){
+  var name=document.getElementById('inv-name').value.trim();
+  var amount=parseFloat(document.getElementById('inv-amount').value)||0;
+  if(!name||!amount){showToast('Completa nombre y monto','gold','');return;}
+  var data={name:name,amount:amount,date:document.getElementById('inv-date').value,notes:document.getElementById('inv-notes').value.trim(),type:document.getElementById('inv-type').value,createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+  var id=document.getElementById('inv-edit-id').value;
+  var col=db.collection('users').doc(cu.uid).collection('investments');
+  if(id)col.doc(id).update(data);else col.add(data);
+  document.getElementById('investment-modal').classList.remove('open');
+}
+function renderInvestedPage(){
+  // If listener hasn't loaded yet, fetch directly
+  if(!investments.length && cu){
+    db.collection('users').doc(cu.uid).collection('investments').get().then(function(snap){
+      if(!snap.empty){
+        investments=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});
+        investments.sort(function(a,b){return (b.date||'')>(a.date||'')?1:-1;});
+        renderInvestedPage();
+      }
+    });
+  }
+  var totalInvested=investments.reduce(function(s,i){return s+(i.amount||0);},0);
+  var totalPayouts=accounts.reduce(function(s,a){return s+(a.totalPayouts||0);},0);
+  var netPnl=totalPayouts-totalInvested;
+  var roi=totalInvested>0?(netPnl/totalInvested*100):0;
+  var challengeAccs=accounts.filter(function(a){return a.type==='challenge';}).length;
+  var fundedAccs=accounts.filter(function(a){return a.type==='real'&&(a.totalPayouts||0)>0;}).length;
+  var kEl=document.getElementById('invested-kpis');
+  if(kEl)kEl.innerHTML='<div class="metric-card"><div class="metric-label">ROI Total</div><div class="metric-value '+(roi>=0?'pos':'neg')+'" style="font-size:28px;font-weight:800">'+(roi>=0?'+':'')+roi.toFixed(1)+'%</div><div style="font-size:11px;color:var(--muted);margin-top:4px">'+(netPnl>=0?'+':'')+'$'+netPnl.toFixed(2)+' neto</div></div>'
+    +'<div class="metric-card"><div class="metric-label">Total invertido</div><div class="metric-value neutral" style="font-size:22px;font-weight:800">$'+totalInvested.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>'
+    +'<div class="metric-card"><div class="metric-label">Cuentas challenge</div><div class="metric-value neutral" style="font-size:22px;font-weight:800">'+challengeAccs+'</div><div style="font-size:11px;color:var(--muted);margin-top:4px">Funded: '+fundedAccs+'</div></div>';
+  var lEl=document.getElementById('investments-list');
+  if(lEl){
+    if(!investments.length){lEl.innerHTML='<div class="empty-state"><i class="ti ti-coin"></i>Sin inversiones aún</div>';return;}
+    lEl.innerHTML=investments.map(function(inv){
+      var typeLabels={account:'Cuenta fondeo',course:'Curso',tool:'Herramienta',other:'Otro'};
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border2)">'
+        +'<div><div style="font-size:12px;font-weight:600">'+inv.name+'</div>'
+        +'<div style="font-size:10px;color:var(--muted)">'+(typeLabels[inv.type]||'Otro')+' · '+(inv.date||'--')+'</div>'
+        +(inv.notes?'<div style="font-size:10px;color:var(--muted2)">'+inv.notes+'</div>':'')+'</div>'
+        +'<div style="display:flex;align-items:center;gap:8px">'
+        +'<span style="font-size:14px;font-weight:700;color:var(--red)">-$'+( inv.amount||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span>'
+        +'<button class="btn sm danger" onclick="deleteInvestment(\''+inv.id+'\')"><i class="ti ti-trash" style="font-size:11px"></i></button>'
+        +'</div></div>';
+    }).join('');
+  }
+}
+function deleteInvestment(id){if(!confirm('¿Eliminar esta inversión?'))return;db.collection('users').doc(cu.uid).collection('investments').doc(id).delete();}
+
+// ---- DEPOSITS / WITHDRAWALS ----
+function openDepositModal(type){
+  document.getElementById('dep-type').value=type;
+  document.getElementById('deposit-modal-title').textContent=type==='deposit'?'Depósito':'Retiro';
+  document.getElementById('dep-amount').value='';
+  document.getElementById('dep-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('dep-notes').value='';
+  var sel=document.getElementById('dep-account');
+  sel.innerHTML=accounts.map(function(a){return '<option value="'+a.id+'">'+a.name+'</option>';}).join('');
+  document.getElementById('deposit-modal').classList.add('open');
+}
+function saveDeposit(){
+  var type=document.getElementById('dep-type').value;
+  var accId=document.getElementById('dep-account').value;
+  var amount=parseFloat(document.getElementById('dep-amount').value)||0;
+  var date=document.getElementById('dep-date').value;
+  if(!accId||!amount){showToast('Completa todos los campos','gold','');return;}
+  var data={accountId:accId,type:type,amount:amount,date:date,notes:document.getElementById('dep-notes').value.trim(),createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+  db.collection('users').doc(cu.uid).collection('deposits').add(data).then(function(){
+    showToast((type==='deposit'?'Depósito':'Retiro')+' registrado','success','');
+    document.getElementById('deposit-modal').classList.remove('open');
+    // If withdrawal, add to account totalPayouts
+    if(type==='withdrawal'){
+      var acc=accounts.find(function(a){return a.id===accId;});
+      if(acc){var cur=acc.totalPayouts||0;db.collection('users').doc(cu.uid).collection('accounts').doc(accId).update({totalPayouts:cur+amount});}
+    }
+  });
+}
+
 // Actualizar relojes cada segundo
 setInterval(function(){
   if(!document.getElementById('page-accounts').classList.contains('active'))return;
@@ -1572,10 +1854,11 @@ function renderAccountsPage(){
     var wr=at.length?(at.filter(function(t){return t.result==='win';}).length/at.length*100).toFixed(1):0;
     var badge='',prog='',meta='';
     var ddPct=a.ddPct||0;
-    var ddLevel=a.ddType==='dynamic'?null:(a.initialBalance||0)*(1-ddPct/100);
+    var maxBal=Math.max.apply(null,[a.initialBalance||0].concat(trades.filter(function(t){return t.accountId===a.id&&t.balanceAfter;}).map(function(t){return t.balanceAfter;})));
+    var ddLevel=a.ddType==='dynamic'?(maxBal*(1-ddPct/100)):(a.initialBalance||0)*(1-ddPct/100);
     if(a.type==='challenge'){var cur=a.currentPhase||1,ph=a.phases||1;badge='<span style="font-size:10px;color:var(--gold);background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.3);padding:2px 7px;border-radius:4px;margin-left:4px">FASE '+cur+(ph===2?'/2':'')+'</span>';var goal=cur===1?(a.p1Amt||0):(a.p2Amt||0);prog=renderPBar(pnl,goal,'Progreso Fase '+cur);}
     else{var goal2=a.goalAmt||0;if(goal2>0){prog=a.goalReached?'<div style="margin-top:10px;padding:8px;background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.3);border-radius:6px;font-size:11px;color:var(--green);text-align:center">Meta alcanzada!</div>':renderPBar(pnl,goal2,'Progreso hacia la meta');}}
-    if(ddPct){meta='<div style="font-size:10px;color:var(--muted);margin-top:4px">DD '+(a.ddType==='dynamic'?'Dinamico':'Fijo')+': <span style="color:var(--red)">'+ddPct+'%</span>'+(ddLevel?' Nivel: <b style="color:var(--red)">$'+ddLevel.toFixed(0)+'</b>':'')+'</div>';}
+    if(ddPct){meta='<div style="font-size:10px;color:var(--muted);margin-top:4px">DD '+(a.ddType==='dynamic'?'Dinámico':'Fijo')+': <span style="color:var(--red)">'+ddPct+'%</span> Nivel: <b style="color:var(--red)">$'+ddLevel.toFixed(0)+'</b></div>';}
     return '<div class="account-card '+(a.type||'real')+'" onclick="openAccountDetail(\''+a.id+'\')">'
       +'<div style="display:flex;align-items:flex-start;justify-content:space-between">'
       +'<div><div style="font-size:14px;font-weight:600">'+a.name+badge+'</div><div style="font-size:11px;color:var(--muted);margin-bottom:4px">'+(a.broker||'Sin broker')+' <span class="badge '+(a.type||'real')+'">'+(a.type||'real').toUpperCase()+'</span></div></div>'
@@ -1714,7 +1997,7 @@ function renderCalendar(){
         var bg=dayData?(dayData.pnl>=0?'rgba(0,229,160,.7)':'rgba(255,69,96,.7)'):'var(--bg2)';
         var title=dd+(dayData?' · '+(dayData.pnl>=0?'+':'')+fmtValSum(dayData.pnl):'');
         mini+='<div style="height:14px;background:'+bg+';border-radius:2px;cursor:'+(dayData?'pointer':'default')+';position:relative;display:flex;align-items:center;justify-content:center" title="'+title+'"'+(dayData?' onclick="goToCalMonth('+calYear+','+captM+')"':'')+'>'
-          +(dayData?'<span style="font-size:6px;color:#fff;font-weight:700;overflow:hidden;line-height:1;text-align:center;max-width:100%;padding:0 1px">'+( Math.abs(dayData.pnl)>=100?( dayData.pnl>=0?'+':'-')+(Math.abs(dayData.pnl)/1000).toFixed(1)+'k':(dayData.pnl>=0?'+':'')+dayData.pnl.toFixed(0))+'</span>':'')
+          +(dayData?'<span style="font-size:6px;color:#fff;font-weight:700;overflow:hidden;line-height:1;text-align:center;max-width:100%;padding:0 1px">'+(dayData.pnl>=0?'+':'')+dayData.pnl.toFixed(0)+'</span>':'')
           +'</div>';
       }
       mini+='</div>';
@@ -2504,7 +2787,7 @@ function viewTool(id){
 
 function renderToolsGrid(){
   var grid=document.getElementById('tools-grid');if(!grid)return;
-  if(!tools.length){grid.innerHTML='<div style="grid-column:1/-1"><div class="empty-state"><i class="ti ti-tools"></i><div>Sin indicadores aun</div>'+(isAdmin?'<button class="btn primary" style="margin-top:16px" onclick="openToolModal()"><i class="ti ti-plus"></i>Agregar indicador</button>':'')+'</div></div>';return;}
+  if(!tools.length){grid.innerHTML='<div style="grid-column:1/-1"><div class="empty-state"><i class="ti ti-tools"></i><div>Sin indicadores aun</div>'+'</div></div>';return;}
   grid.innerHTML=tools.map(function(t){
     var imgs=t.imgs&&t.imgs.length?t.imgs:(t.img?[t.img]:[]);
     var isPaid=t.toolType==='paid';
@@ -2735,7 +3018,7 @@ function renderDiariosGrid(){
   var grid=document.getElementById('diarios-grid');if(!grid)return;
   if(!diarios.length){
     grid.innerHTML='<div style="grid-column:1/-1"><div class="empty-state"><i class="ti ti-book"></i><div>Sin diarios aun</div>'
-      +(isAdmin?'<button class="btn primary" style="margin-top:16px" onclick="openDiarioModal()"><i class="ti ti-plus"></i>Agregar diario</button>':'')
+      +''
       +'</div></div>';
     return;
   }
@@ -2846,6 +3129,8 @@ document.getElementById('watchlist-modal').addEventListener('click',function(e){
 document.getElementById('comprobante-modal').addEventListener('click',function(e){if(e.target===this)document.getElementById('comprobante-modal').classList.remove('open');});
 document.getElementById('day-trades-modal').addEventListener('click',function(e){if(e.target===this)document.getElementById('day-trades-modal').classList.remove('open');});
 document.getElementById('impact-edit-modal').addEventListener('click',function(e){if(e.target===this)document.getElementById('impact-edit-modal').classList.remove('open');});
+document.getElementById('investment-modal').addEventListener('click',function(e){if(e.target===this)document.getElementById('investment-modal').classList.remove('open');});
+document.getElementById('deposit-modal').addEventListener('click',function(e){if(e.target===this)document.getElementById('deposit-modal').classList.remove('open');});
 document.addEventListener('click',function(e){var dd=document.getElementById('col-dropdown');if(dd&&!e.target.closest('#col-dropdown')&&!e.target.closest('[onclick*="col-dropdown"]'))dd.style.display='none';});
 
 // ---- SOPORTE ----

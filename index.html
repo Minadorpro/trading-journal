@@ -1178,101 +1178,216 @@ var FED_DATA={
   expires:'2026-06-30',
   midPrice:96.3800
 };
-var FUTURES_ALL={
-  GC:{name:'Oro',exchange:'CME Group',unit:'Oz Troy',data:[
-    {month:'Cash',price:3284.40,chg:26.80,vol:84801,expiry:null},
-    {month:'Jun 26',price:3291.20,chg:-5.50,vol:33800,expiry:'2026-06-26'},
-    {month:'Aug 26',price:3298.60,chg:-6.30,vol:2886,expiry:'2026-08-28'},
-    {month:'Oct 26',price:3312.40,chg:3.20,vol:96,expiry:'2026-10-29'},
-    {month:'Dec 26',price:3321.10,chg:-6.20,vol:214,expiry:'2026-12-29'}
-  ]},
-  NQ:{name:'Nasdaq 100',exchange:'CME Group',unit:'USD',data:[
-    {month:'Cash',price:18432,chg:142,vol:62400,expiry:null},
-    {month:'Jun 26',price:18481,chg:-38,vol:41200,expiry:'2026-06-19'},
-    {month:'Sep 26',price:18540,chg:21,vol:1840,expiry:'2026-09-18'},
-    {month:'Dec 26',price:18598,chg:-12,vol:320,expiry:'2026-12-18'}
-  ]},
-  ES:{name:'S&P 500',exchange:'CME Group',unit:'USD',data:[
-    {month:'Cash',price:5241,chg:34,vol:71200,expiry:null},
-    {month:'Jun 26',price:5258,chg:-22,vol:52100,expiry:'2026-06-19'},
-    {month:'Sep 26',price:5281,chg:14,vol:2100,expiry:'2026-09-18'},
-    {month:'Dec 26',price:5304,chg:-8,vol:410,expiry:'2026-12-18'}
-  ]},
-  YM:{name:'Dow Jones',exchange:'CME Group',unit:'USD',data:[
-    {month:'Cash',price:39112,chg:-210,vol:18400,expiry:null},
-    {month:'Jun 26',price:39241,chg:-180,vol:12800,expiry:'2026-06-19'},
-    {month:'Sep 26',price:39380,chg:90,vol:640,expiry:'2026-09-18'},
-    {month:'Dec 26',price:39510,chg:-45,vol:120,expiry:'2026-12-18'}
-  ]},
-  CL:{name:'Petróleo WTI',exchange:'NYMEX',unit:'Barril',data:[
-    {month:'Cash',price:78.42,chg:1.24,vol:92100,expiry:null},
-    {month:'Jun 26',price:78.81,chg:-0.94,vol:68400,expiry:'2026-05-20'},
-    {month:'Jul 26',price:79.14,chg:0.62,vol:8200,expiry:'2026-06-20'},
-    {month:'Aug 26',price:79.46,chg:-0.38,vol:1840,expiry:'2026-07-21'},
-    {month:'Sep 26',price:79.82,chg:0.21,vol:420,expiry:'2026-08-20'}
-  ]},
-  SI:{name:'Plata',exchange:'CME Group',unit:'Oz Troy',data:[
-    {month:'Cash',price:32.18,chg:0.54,vol:28400,expiry:null},
-    {month:'Jul 26',price:32.44,chg:-0.32,vol:14200,expiry:'2026-07-29'},
-    {month:'Sep 26',price:32.68,chg:0.18,vol:1240,expiry:'2026-09-29'},
-    {month:'Dec 26',price:32.91,chg:-0.14,vol:280,expiry:'2026-12-29'}
-  ]},
-  '6E':{name:'EUR/USD',exchange:'CME Group',unit:'EUR',data:[
-    {month:'Cash',price:1.0847,chg:-0.0012,vol:44800,expiry:null},
-    {month:'Jun 26',price:1.0862,chg:-0.0008,vol:32100,expiry:'2026-06-15'},
-    {month:'Sep 26',price:1.0878,chg:0.0004,vol:1820,expiry:'2026-09-14'},
-    {month:'Dec 26',price:1.0894,chg:-0.0002,vol:340,expiry:'2026-12-14'}
-  ]},
-  BTC:{name:'Bitcoin',exchange:'CME Group',unit:'USD',data:[
-    {month:'Cash',price:67820,chg:842,vol:18200,expiry:null},
-    {month:'Jun 26',price:68240,chg:-620,vol:12400,expiry:'2026-06-26'},
-    {month:'Sep 26',price:68890,chg:380,vol:840,expiry:'2026-09-25'},
-    {month:'Dec 26',price:69420,chg:-240,vol:180,expiry:'2026-12-25'}
-  ]},
-  MGC:{name:'Micro Oro',exchange:'CME Group',unit:'10 Oz Troy',data:[
-    {month:'Cash',price:3284.40,chg:26.80,vol:42000,expiry:null},
-    {month:'Jun 26',price:3291.20,chg:-5.50,vol:18400,expiry:'2026-06-26'},
-    {month:'Aug 26',price:3298.60,chg:-6.30,vol:1240,expiry:'2026-08-28'},
-    {month:'Dec 26',price:3321.10,chg:-6.20,vol:480,expiry:'2026-12-29'}
-  ]},
-  MNQ:{name:'Micro Nasdaq',exchange:'CME Group',unit:'USD x2',data:[
-    {month:'Cash',price:18432,chg:142,vol:38200,expiry:null},
-    {month:'Jun 26',price:18481,chg:-38,vol:24800,expiry:'2026-06-19'},
-    {month:'Sep 26',price:18540,chg:21,vol:920,expiry:'2026-09-18'},
-    {month:'Dec 26',price:18598,chg:-12,vol:160,expiry:'2026-12-18'}
-  ]},
-  MES:{name:'Micro S&P 500',exchange:'CME Group',unit:'USD x5',data:[
-    {month:'Cash',price:5241,chg:34,vol:44800,expiry:null},
-    {month:'Jun 26',price:5258,chg:-22,vol:32100,expiry:'2026-06-19'},
-    {month:'Sep 26',price:5281,chg:14,vol:1200,expiry:'2026-09-18'},
-    {month:'Dec 26',price:5304,chg:-8,vol:240,expiry:'2026-12-18'}
-  ]},
-  MYM:{name:'Micro Dow Jones',exchange:'CME Group',unit:'USD x0.50',data:[
-    {month:'Cash',price:39112,chg:-210,vol:12400,expiry:null},
-    {month:'Jun 26',price:39241,chg:-180,vol:8200,expiry:'2026-06-19'},
-    {month:'Sep 26',price:39380,chg:90,vol:420,expiry:'2026-09-18'},
-    {month:'Dec 26',price:39510,chg:-45,vol:80,expiry:'2026-12-18'}
-  ]},
-  MCL:{name:'Micro Petróleo WTI',exchange:'NYMEX',unit:'100 Barriles',data:[
-    {month:'Cash',price:78.42,chg:1.24,vol:28400,expiry:null},
-    {month:'Jun 26',price:78.81,chg:-0.94,vol:18200,expiry:'2026-05-20'},
-    {month:'Jul 26',price:79.14,chg:0.62,vol:4200,expiry:'2026-06-20'},
-    {month:'Aug 26',price:79.46,chg:-0.38,vol:840,expiry:'2026-07-21'}
-  ]},
-  M6E:{name:'Micro EUR/USD',exchange:'CME Group',unit:'12,500 EUR',data:[
-    {month:'Cash',price:1.0847,chg:-0.0012,vol:18400,expiry:null},
-    {month:'Jun 26',price:1.0862,chg:-0.0008,vol:12800,expiry:'2026-06-15'},
-    {month:'Sep 26',price:1.0878,chg:0.0004,vol:820,expiry:'2026-09-14'},
-    {month:'Dec 26',price:1.0894,chg:-0.0002,vol:160,expiry:'2026-12-14'}
-  ]},
-  MBT:{name:'Micro Bitcoin',exchange:'CME Group',unit:'0.1 BTC',data:[
-    {month:'Cash',price:67820,chg:842,vol:8400,expiry:null},
-    {month:'Jun 26',price:68240,chg:-620,vol:5200,expiry:'2026-06-26'},
-    {month:'Sep 26',price:68890,chg:380,vol:420,expiry:'2026-09-25'},
-    {month:'Dec 26',price:69420,chg:-240,vol:80,expiry:'2026-12-25'}
-  ]}
+// ---- FUTURES REAL-TIME ENGINE ----
+// Maps each instrument to its Finnhub symbol and CME contract metadata
+var FUTURES_META={
+  GC: {name:'Oro',          exchange:'CME Group', unit:'USD/Oz Troy', finnhub:'GC',  micro:'MGC', decimals:2, cycle:'GJMQVZ', rollDays:5},
+  MGC:{name:'Micro Oro',    exchange:'CME Group', unit:'10 Oz Troy',  finnhub:'MGC', micro:null,  decimals:2, cycle:'GJMQVZ', rollDays:5},
+  NQ: {name:'Nasdaq 100',   exchange:'CME Group', unit:'USD',         finnhub:'NQ',  micro:'MNQ', decimals:0, cycle:'HMUZ',   rollDays:8},
+  MNQ:{name:'Micro Nasdaq', exchange:'CME Group', unit:'USD x2',      finnhub:'MNQ', micro:null,  decimals:0, cycle:'HMUZ',   rollDays:8},
+  ES: {name:'S&P 500',      exchange:'CME Group', unit:'USD',         finnhub:'ES',  micro:'MES', decimals:2, cycle:'HMUZ',   rollDays:8},
+  MES:{name:'Micro S&P 500',exchange:'CME Group', unit:'USD x5',      finnhub:'MES', micro:null,  decimals:2, cycle:'HMUZ',   rollDays:8},
+  YM: {name:'Dow Jones',    exchange:'CME Group', unit:'USD',         finnhub:'YM',  micro:'MYM', decimals:0, cycle:'HMUZ',   rollDays:8},
+  MYM:{name:'Micro Dow',    exchange:'CME Group', unit:'USD x0.50',   finnhub:'MYM', micro:null,  decimals:0, cycle:'HMUZ',   rollDays:8},
+  CL: {name:'Petróleo WTI', exchange:'NYMEX',     unit:'Barril',      finnhub:'CL',  micro:'MCL', decimals:2, cycle:'FGHJKMNQUVXZ', rollDays:4},
+  MCL:{name:'Micro WTI',    exchange:'NYMEX',     unit:'100 Barriles',finnhub:'MCL', micro:null,  decimals:2, cycle:'FGHJKMNQUVXZ', rollDays:4},
+  SI: {name:'Plata',        exchange:'CME Group', unit:'Oz Troy',     finnhub:'SI',  micro:null,  decimals:3, cycle:'HKNUZ',  rollDays:5},
+  '6E':{name:'EUR/USD',     exchange:'CME Group', unit:'EUR',         finnhub:'6E',  micro:'M6E', decimals:4, cycle:'HMUZ',   rollDays:5},
+  M6E:{name:'Micro EUR/USD',exchange:'CME Group', unit:'12,500 EUR',  finnhub:'M6E', micro:null,  decimals:4, cycle:'HMUZ',   rollDays:5},
+  BTC:{name:'Bitcoin',      exchange:'CME Group', unit:'USD',         finnhub:'BTC', micro:'MBT', decimals:0, cycle:'FGHJKMNQUVXZ', rollDays:5},
+  MBT:{name:'Micro Bitcoin',exchange:'CME Group', unit:'0.1 BTC',     finnhub:'MBT', micro:null,  decimals:0, cycle:'FGHJKMNQUVXZ', rollDays:5}
 };
-var FUTURES_DATA=FUTURES_ALL.GC.data;
+
+// Month codes
+var MONTH_CODES={F:0,G:1,H:2,J:3,K:4,M:5,N:6,Q:7,U:8,V:9,X:10,Z:11};
+var MONTH_NAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Calculate front month expiry dates (3rd Friday for equity index, last business day -2 for metals/energy)
+function calcExpiry(year, month0, type){
+  if(type==='equity'){ // 3rd Friday
+    var d=new Date(year, month0, 1);
+    var fridays=0;
+    while(fridays<3){if(d.getDay()===5)fridays++;if(fridays<3)d.setDate(d.getDate()+1);}
+    return d;
+  } else if(type==='metal'||type==='energy'){ // last business day of month before
+    var d=new Date(year, month0+1, 0); // last day of month
+    while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()-1);
+    d.setDate(d.getDate()-2);
+    while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()-1);
+    return d;
+  } else { // FX / BTC: 3rd Wednesday
+    var d=new Date(year, month0, 1);
+    var weds=0;
+    while(weds<3){if(d.getDay()===3)weds++;if(weds<3)d.setDate(d.getDate()+1);}
+    return d;
+  }
+}
+
+function getExpiryType(key){
+  if(['NQ','MNQ','ES','MES','YM','MYM'].indexOf(key)>=0) return 'equity';
+  if(['GC','MGC','SI','CL','MCL'].indexOf(key)>=0) return 'metal';
+  return 'fx';
+}
+
+// Generate next N contract months for an instrument
+function getFutureContracts(key, count){
+  var meta=FUTURES_META[key];
+  if(!meta)return[];
+  var cycle=meta.cycle;
+  var now=new Date();
+  var contracts=[];
+  var y=now.getFullYear();
+  var m=now.getMonth(); // 0-based
+  var eType=getExpiryType(key);
+  // Search next 24 months for valid cycle months
+  for(var i=0;i<24&&contracts.length<count;i++){
+    var cm=(m+i)%12;
+    var cy=y+Math.floor((m+i)/12);
+    var code=Object.keys(MONTH_CODES).find(function(k){return MONTH_CODES[k]===cm;});
+    if(cycle.indexOf(code)>=0){
+      var exp=calcExpiry(cy, cm, eType);
+      // Keep contract visible until actual expiry date (remove only after it expires)
+      if(exp>now){
+        contracts.push({
+          code: key+code+(String(cy).slice(-2)),
+          month: MONTH_NAMES[cm]+' '+String(cy).slice(-2),
+          expiry: exp.toISOString().slice(0,10),
+          monthCode: code,
+          year: cy
+        });
+      }
+    }
+  }
+  return contracts;
+}
+
+// Cached live data per symbol
+var FUTURES_LIVE_CACHE={};
+var FUTURES_LAST_FETCH={};
+var FUTURES_LOADING={};
+
+// Fetch real-time quote from Finnhub for a futures symbol
+// Finnhub futures: symbol like "GCM26:COMEX" or "GC1!" for continuous
+// ---- FUTURES DATA SOURCE STRATEGY ----
+// Priority: FMP (/GC, /NQ etc.) → Finnhub (spot fallback) → static
+// FMP uses CME official delayed data (15-20min), same contract as NinjaTrader/TradingView
+
+// FMP futures symbol map (slash prefix = continuous front month, CME official)
+var FMP_FUTURES_SYMBOLS={
+  GC:'/GC', MGC:'/MGC', SI:'/SI',
+  NQ:'/NQ', MNQ:'/MNQ',
+  ES:'/ES', MES:'/MES',
+  YM:'/YM', MYM:'/MYM',
+  CL:'/CL', MCL:'/MCL',
+  '6E':'/6E', M6E:'/M6E',
+  BTC:'/BTC', MBT:'/MBT'
+};
+
+// Finnhub fallback symbol map
+var FINNHUB_FUTURES_SYMBOLS={
+  GC:'GC:COMEX', MGC:'MGC:COMEX', SI:'SI:COMEX',
+  NQ:'NQ:GLOBEX', MNQ:'MNQ:GLOBEX',
+  ES:'ES:GLOBEX', MES:'MES:GLOBEX',
+  YM:'YM:CBOT', MYM:'MYM:CBOT',
+  CL:'CL:NYMEX', MCL:'MCL:NYMEX',
+  '6E':'6E:GLOBEX', M6E:'M6E:GLOBEX',
+  BTC:'BTC:CMECRYPTO', MBT:'MBT:CMECRYPTO'
+};
+
+function fetchFuturesLive(key, callback){
+  var meta=FUTURES_META[key];
+  if(!meta){callback(null);return;}
+  var now=Date.now();
+  if(FUTURES_LIVE_CACHE[key]&&(now-FUTURES_LAST_FETCH[key])<60000){
+    callback(FUTURES_LIVE_CACHE[key]);return;
+  }
+  if(FUTURES_LOADING[key]){callback(FUTURES_LIVE_CACHE[key]||null);return;}
+  FUTURES_LOADING[key]=true;
+
+  function buildResult(price,pc,vol,source,timestamp){
+    var chg=parseFloat((price-pc).toFixed(4));
+    var chgPct=pc>0?parseFloat(((price-pc)/pc*100).toFixed(2)):0;
+    var stale=timestamp?(((Date.now()/1000)-timestamp)>900):false;
+    var result={price:price,prevClose:pc,chg:chg,chgPct:chgPct,vol:vol||0,
+      timestamp:timestamp?new Date(timestamp*1000):null,stale:stale,source:source,fetchedAt:Date.now()};
+    FUTURES_LIVE_CACHE[key]=result;
+    FUTURES_LAST_FETCH[key]=Date.now();
+    FUTURES_LOADING[key]=false;
+    return result;
+  }
+
+  // === SOURCE 1: FMP — CME official delayed (matches NinjaTrader/TradingView) ===
+  var fmpSym=FMP_FUTURES_SYMBOLS[key];
+  if(fmpSym&&typeof FMP_KEY!=='undefined'&&FMP_KEY){
+    fetch('https://financialmodelingprep.com/api/v3/quote/'+encodeURIComponent(fmpSym)+'?apikey='+FMP_KEY)
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var q=Array.isArray(data)?data[0]:data;
+      if(q&&q.price&&q.price>0){
+        callback(buildResult(q.price,q.previousClose||q.price,q.volume,'FMP'+fmpSym,null));
+        return;
+      }
+      tryFinnhub();
+    })
+    .catch(tryFinnhub);
+  } else {
+    tryFinnhub();
+  }
+
+  // === SOURCE 2: Finnhub — fallback ===
+  function tryFinnhub(){
+    var fhSym=FINNHUB_FUTURES_SYMBOLS[key];
+    if(!fhSym||typeof FINNHUB_KEY==='undefined'||!FINNHUB_KEY){
+      FUTURES_LOADING[key]=false;callback(FUTURES_LIVE_CACHE[key]||null);return;
+    }
+    fetch('https://finnhub.io/api/v1/quote?symbol='+encodeURIComponent(fhSym)+'&token='+FINNHUB_KEY)
+    .then(function(r){return r.json();})
+    .then(function(q){
+      if(q&&q.c&&q.c>0){
+        callback(buildResult(q.c,q.pc||q.c,q.v,'Finnhub/'+fhSym,q.t));
+      } else {
+        FUTURES_LOADING[key]=false;
+        callback(FUTURES_LIVE_CACHE[key]||null);
+      }
+    })
+    .catch(function(){
+      FUTURES_LOADING[key]=false;
+      callback(FUTURES_LIVE_CACHE[key]||null);
+    });
+  }
+}
+
+// Legacy static fallback (used only if API fails)
+var FUTURES_STATIC_FALLBACK={
+  GC:{price:3284.40,chg:26.80,vol:84801},
+  MGC:{price:3284.40,chg:26.80,vol:42000},
+  NQ:{price:18432,chg:142,vol:62400},
+  MNQ:{price:18432,chg:142,vol:38200},
+  ES:{price:5241,chg:34,vol:71200},
+  MES:{price:5241,chg:34,vol:44800},
+  YM:{price:39112,chg:-210,vol:18400},
+  MYM:{price:39112,chg:-210,vol:12400},
+  CL:{price:78.42,chg:1.24,vol:92100},
+  MCL:{price:78.42,chg:1.24,vol:28400},
+  SI:{price:32.18,chg:0.54,vol:28400},
+  '6E':{price:1.0847,chg:-0.0012,vol:44800},
+  M6E:{price:1.0847,chg:-0.0012,vol:18400},
+  BTC:{price:67820,chg:842,vol:18200},
+  MBT:{price:67820,chg:842,vol:8400}
+};
+
+// Keep FUTURES_ALL for backward compat with any other code referencing it
+var FUTURES_ALL={};
+Object.keys(FUTURES_META).forEach(function(k){
+  var fb=FUTURES_STATIC_FALLBACK[k]||{price:0,chg:0,vol:0};
+  FUTURES_ALL[k]={
+    name:FUTURES_META[k].name,
+    exchange:FUTURES_META[k].exchange,
+    unit:FUTURES_META[k].unit,
+    data:[{month:'Front Month',price:fb.price,chg:fb.chg,vol:fb.vol,expiry:null}]
+  };
+});
+var FUTURES_DATA=FUTURES_ALL.GC?FUTURES_ALL.GC.data:[];
 
 function showToast(msg,type,icon){
   var t=document.getElementById('toast');
@@ -2469,6 +2584,11 @@ function fmtP(sym,p){if(!p)return '--';if(['BTC/USD','NAS100','US30','SP500'].in
 function initTerminal(){
   if(!termInited){initTermData();termInited=true;}
   renderTicker();renderWatchlist();renderChartPanel();renderTermNews();renderEcoCalendar();renderFuturesTable();renderFearGreed();renderCorrelations();renderTermSessions();renderCryptoWidget();renderCommodityWidget();renderHotStories();renderFedBarometer();renderImpactEvents();renderCOT();
+  // Auto-refresh futures every 60s
+  if(window._futuresRefreshInterval)clearInterval(window._futuresRefreshInterval);
+  window._futuresRefreshInterval=setInterval(function(){
+    if(document.getElementById('page-terminal')&&document.getElementById('page-terminal').classList.contains('active'))renderFuturesTable();
+  },60000);
   loadFMPCalendar();
   setInterval(loadFMPCalendar,60*60*1000);
   if(termInterval)clearInterval(termInterval);
@@ -2571,60 +2691,141 @@ function renderEcoCalendar(){
 function renderFuturesTable(){
   var sel=document.getElementById('futures-selector');
   var key=sel?sel.value:'GC';
-  var inst=FUTURES_ALL[key]||FUTURES_ALL.GC;
-  var data=inst.data;
-  FUTURES_DATA=data;
-  var isMicro=key.charAt(0)==='M'&&key!=='MES'||key==='MGC'||key==='MNQ'||key==='MYM'||key==='MCL'||key==='M6E'||key==='MBT';
+  var meta=FUTURES_META[key]||FUTURES_META.GC;
+  var el=document.getElementById('futures-table');if(!el)return;
+  var maEl=document.getElementById('futures-most-active');
   var titleEl=document.getElementById('futures-title');
   var subEl=document.getElementById('futures-subtitle');
-  if(titleEl)titleEl.textContent='Futuros '+inst.name+(isMicro?' (Micro)':'')+' — Contratos';
-  if(subEl)subEl.textContent=key+' — '+inst.exchange+' · '+inst.unit;
-  var el=document.getElementById('futures-table');if(!el)return;
-  var now=new Date();
-  var html='<div style="display:grid;grid-template-columns:55px 80px 48px 58px 50px;font-size:11px;gap:0">';
-  ['MES','PRECIO','VAR.','VOLUMEN','VENCE'].forEach(function(h){html+='<div style="font-size:9px;color:var(--muted);padding:5px 4px;border-bottom:1px solid var(--border2);font-weight:600">'+h+'</div>';});
-  data.forEach(function(f){
-    var daysLeft=null,expiryStr='--',expiryColor='var(--muted2)';
-    if(f.expiry){
-      var exp=new Date(f.expiry);
-      daysLeft=Math.floor((exp-now)/(1000*60*60*24));
-      expiryStr=daysLeft>0?daysLeft+'d':'HOY';
-      expiryColor=daysLeft<=7?'var(--red)':daysLeft<=21?'var(--gold)':'var(--muted2)';
-    }
-    html+='<div style="padding:6px 4px;border-bottom:1px solid var(--border2);font-weight:600;color:var(--text)">'+f.month+'</div>';
-    html+='<div style="padding:6px 4px;border-bottom:1px solid var(--border2);font-family:monospace">'+f.price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:4})+'</div>';
-    html+='<div style="padding:6px 4px;border-bottom:1px solid var(--border2);color:'+(f.chg>=0?'var(--green)':'var(--red)')+';font-weight:600">'+(f.chg>=0?'+':'')+f.chg+'</div>';
-    html+='<div style="padding:6px 4px;border-bottom:1px solid var(--border2);color:var(--muted2)">'+f.vol.toLocaleString()+'</div>';
-    html+='<div style="padding:6px 4px;border-bottom:1px solid var(--border2);color:'+expiryColor+';font-weight:'+(daysLeft!==null&&daysLeft<=7?'700':'400')+'">'+expiryStr+'</div>';
-  });
-  html+='</div>';el.innerHTML=html;
 
-  // Banner contrato más activo con expiry
-  var mostActive=data.filter(function(f){return f.expiry!==null;}).slice().sort(function(a,b){return b.vol-a.vol;})[0]||data.slice().sort(function(a,b){return b.vol-a.vol;})[0];
-  var maEl=document.getElementById('futures-most-active');
-  if(maEl&&mostActive){
-    var up=mostActive.chg>=0;
-    var daysMA=null,rollAlert='';
-    if(mostActive.expiry){
-      var expMA=new Date(mostActive.expiry);
-      daysMA=Math.floor((expMA-now)/(1000*60*60*24));
-      if(daysMA<=7)rollAlert='<div style="background:rgba(255,69,96,.15);border:1px solid rgba(255,69,96,.4);border-radius:6px;padding:6px 10px;margin-top:8px;font-size:10px;font-weight:700;color:var(--red)">⚠️ ROLL PRONTO — '+(daysMA<=0?'VENCE HOY':daysMA+' días para vencimiento')+' — Considera pasar al siguiente contrato</div>';
-      else if(daysMA<=21)rollAlert='<div style="background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.3);border-radius:6px;padding:6px 10px;margin-top:8px;font-size:10px;color:var(--gold)">📅 Vence en '+daysMA+' días ('+mostActive.expiry+')</div>';
-    }
-    maEl.innerHTML='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:4px">'
-      +'<div style="font-size:9px;color:var(--cyan);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px">🔥 Contrato más activo</div>'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">'
-      +'<div>'
-      +'<div style="font-size:28px;font-weight:800;color:var(--text);font-family:monospace;letter-spacing:-1px">'+mostActive.price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:4})+'</div>'
-      +'<div style="font-size:12px;color:var(--muted);margin-top:2px">'+key+' &nbsp;·&nbsp; '+mostActive.month+(mostActive.expiry?' &nbsp;·&nbsp; Vence: '+mostActive.expiry:'')+'</div>'
-      +'</div>'
-      +'<div style="text-align:right">'
-      +'<div style="font-size:22px;font-weight:700;color:'+(up?'var(--green)':'var(--red)')+';">'+(up?'+':'')+mostActive.chg.toLocaleString()+'</div>'
-      +'<div style="font-size:11px;color:var(--muted);margin-top:2px">Vol: <b style="color:var(--text)">'+mostActive.vol.toLocaleString()+'</b>'+(daysMA!==null?' &nbsp;|&nbsp; <span style="color:'+(daysMA<=7?'var(--red)':daysMA<=21?'var(--gold)':'var(--muted2)')+'">'+(daysMA<=0?'VENCE HOY':daysMA+'d')+'</span>':'')+'</div>'
-      +'</div>'
-      +'</div>'
-      +rollAlert
+  if(titleEl)titleEl.textContent='Futuros '+meta.name+' — Contratos CME';
+  if(subEl)subEl.textContent=key+' — '+meta.exchange+' · '+meta.unit;
+
+  el.innerHTML='';
+  if(maEl)maEl.innerHTML='';
+
+  var now=new Date();
+  var contracts=getFutureContracts(key,5);
+  var rollDays=meta.rollDays||5;
+
+  if(!contracts.length){
+    el.innerHTML='<div style="padding:12px;color:var(--muted);font-size:11px">Sin contratos disponibles</div>';
+    return;
+  }
+
+  var frontMonth=contracts[0];
+  var frontExpiry=frontMonth.expiry;
+  var daysToFront=Math.floor((new Date(frontExpiry)-now)/(1000*60*60*24));
+
+  // ---- Rollover alert ----
+  var rollAlert='';
+  if(daysToFront<=rollDays)
+    rollAlert='<div style="background:rgba(255,69,96,.15);border:1px solid rgba(255,69,96,.5);border-radius:7px;padding:10px 14px;margin-bottom:10px;font-size:11px;font-weight:700;color:var(--red)">⚠️ ROLL AHORA — '+(daysToFront<=0?'VENCE HOY':'Faltan '+daysToFront+' días')+' — Mueve al '+(contracts[1]?contracts[1].month:'siguiente contrato')+'</div>';
+  else if(daysToFront<=21)
+    rollAlert='<div style="background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.3);border-radius:7px;padding:8px 14px;margin-bottom:10px;font-size:10px;color:var(--gold)">📅 Rollover recomendado en '+(daysToFront-rollDays)+' días · Vencimiento: '+frontExpiry+'</div>';
+
+  // ---- Front month banner ----
+  var pairNote=meta.micro?'<span style="font-size:9px;color:var(--muted2)">Par micro: '+meta.micro+'</span>':'';
+  var frontBanner='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:12px">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    +'<div style="font-size:9px;color:var(--cyan);font-weight:700;letter-spacing:1.5px;text-transform:uppercase">🔥 Front Month — Mayor liquidez</div>'
+    +pairNote
+    +'</div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">'
+    +'<div>'
+    +'<div style="font-size:22px;font-weight:800;color:var(--text);font-family:monospace">'+key+' '+frontMonth.month+'</div>'
+    +'<div style="font-size:11px;color:var(--muted);margin-top:3px">Código: <b style="color:var(--text)">'+frontMonth.code+'</b> &nbsp;·&nbsp; Vence: <b style="color:var(--text)">'+frontExpiry+'</b></div>'
+    +'</div>'
+    +'<div style="text-align:right">'
+    +'<div style="font-size:26px;font-weight:800;color:'+(daysToFront<=rollDays?'var(--red)':daysToFront<=21?'var(--gold)':'var(--green)')+'">'+daysToFront+'d</div>'
+    +'<div style="font-size:10px;color:var(--muted)">días al vencimiento</div>'
+    +'</div>'
+    +'</div>'
+    +rollAlert
+    +'<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border2);font-size:9px;color:var(--muted2);display:flex;align-items:center;gap:6px">'
+    +'<span style="background:rgba(100,116,139,.15);border:1px solid rgba(100,116,139,.25);border-radius:3px;padding:1px 6px;font-weight:600;color:#94a3b8">SIN PRECIO</span>'
+    +'<span>Precio verificado en NinjaTrader · TradingView · Investing.com — Aquí solo datos estructurales (vencimiento, cadena de contratos)</span>'
+    +'</div>'
+    +'</div>';
+
+  if(maEl)maEl.innerHTML=frontBanner;
+
+  // ---- Fetch front month volume from FMP, then render table ----
+  function renderTable(frontVol){
+    var liqLabels=['Alta ●●●','Media ●●○','Baja ●○○','Muy baja ○○○','Mínima ○○○'];
+    var liqColors=['var(--green)','var(--cyan)','var(--gold)','var(--muted)','var(--muted2)'];
+
+    var html='<div style="display:grid;grid-template-columns:72px 90px 92px 44px 100px 68px 56px;font-size:12px;gap:0">';
+    ['CONTRATO','CÓDIGO','VENCIMIENTO','DÍAS','LIQUIDEZ','VOLUMEN','ROLL EN'].forEach(function(h){
+      html+='<div style="font-size:10px;color:var(--muted);padding:6px 4px;border-bottom:1px solid var(--border2);font-weight:600;letter-spacing:.5px'+(h==='VOLUMEN'?';text-align:right':'')+'">'
+        +h+'</div>';
+    });
+
+    contracts.forEach(function(c,i){
+      var daysLeft=Math.floor((new Date(c.expiry)-now)/(1000*60*60*24));
+      var daysColor=daysLeft<=rollDays?'var(--red)':daysLeft<=21?'var(--gold)':'var(--muted2)';
+      var rollIn=Math.max(0,daysLeft-rollDays);
+      var isFront=i===0;
+      var bg=isFront?'background:rgba(0,212,255,.04);':'';
+      var liq=liqLabels[Math.min(i,liqLabels.length-1)];
+      var liqC=liqColors[Math.min(i,liqColors.length-1)];
+
+      // Volume: real for front month, — for deferred
+      var volCell;
+      if(isFront&&frontVol>0){
+        volCell='<b style="color:var(--green)">'+frontVol.toLocaleString('de-DE')+'</b>';
+      } else {
+        volCell='<span style="color:var(--muted2)">—</span>';
+      }
+
+      html+='<div style="padding:9px 4px;border-bottom:1px solid var(--border2);font-weight:'+(isFront?'700':'400')+';color:var(--text);'+bg+'">'+c.month+(isFront?' 🔥':'')+'</div>';
+      html+='<div style="padding:9px 4px;border-bottom:1px solid var(--border2);'+bg+';text-align:center">'
+        +'<span onclick="navigator.clipboard.writeText(\''+c.code+'\').then(function(){var el=this;el.style.color=\'var(--green)\';setTimeout(function(){el.style.color=\'\'},800)}).bind(this)" '
+        +'title="Copiar: '+c.code+'" '
+        +'style="font-family:monospace;font-size:12px;font-weight:700;color:var(--cyan);cursor:pointer;'
+        +'background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:4px;padding:2px 6px;'
+        +'display:inline-block;letter-spacing:.5px;user-select:all;transition:color .2s">'
+        +c.code+'</span></div>';
+      html+='<div style="padding:9px 4px;border-bottom:1px solid var(--border2);font-family:monospace;font-size:11px;color:var(--muted2);'+bg+'">'+c.expiry+'</div>';
+      html+='<div style="padding:9px 4px;border-bottom:1px solid var(--border2);color:'+daysColor+';font-weight:'+(daysLeft<=rollDays?'700':'400')+';'+bg+'">'+daysLeft+'d</div>';
+      html+='<div style="padding:9px 4px;border-bottom:1px solid var(--border2);color:'+liqC+';font-size:11px;'+bg+'">'+liq+'</div>';
+      html+='<div style="padding:9px 4px;border-bottom:1px solid var(--border2);text-align:right;font-size:11px;'+bg+'">'+volCell+'</div>';
+      html+='<div style="padding:9px 4px;border-bottom:1px solid var(--border2);color:var(--muted2);font-size:11px;'+bg+'">'+(isFront?(daysLeft<=rollDays?'<b style="color:var(--red)">YA</b>':rollIn+'d'):'—')+'</div>';
+    });
+    html+='</div>';
+    html+='<div style="font-size:9px;color:var(--muted2);padding:7px 4px;border-top:1px solid var(--border2);margin-top:2px">'
+      +'Vencimientos calculados por algoritmo CME. Volumen: front month vía FMP (puede tener delay). Contratos diferidos sin volumen — verificar en NinjaTrader.'
       +'</div>';
+    el.innerHTML=html;
+    FUTURES_DATA=[{month:frontMonth.month,price:0,chg:0,vol:frontVol||0,expiry:frontExpiry}];
+  }
+
+  // Try to get front month volume: FMP first, then Finnhub as fallback
+  var fmpSym=(typeof FMP_FUTURES_SYMBOLS!=='undefined')?FMP_FUTURES_SYMBOLS[key]:null;
+  var fhSym=(typeof FINNHUB_FUTURES_SYMBOLS!=='undefined')?FINNHUB_FUTURES_SYMBOLS[key]:null;
+
+  function tryFinnhubVol(){
+    if(!fhSym||typeof FINNHUB_KEY==='undefined'||!FINNHUB_KEY){renderTable(0);return;}
+    fetch('https://finnhub.io/api/v1/quote?symbol='+encodeURIComponent(fhSym)+'&token='+FINNHUB_KEY)
+    .then(function(r){return r.json();})
+    .then(function(q){
+      var vol=(q&&q.v&&q.v>0)?q.v:0;
+      renderTable(vol);
+    })
+    .catch(function(){renderTable(0);});
+  }
+
+  if(fmpSym&&typeof FMP_KEY!=='undefined'&&FMP_KEY){
+    fetch('https://financialmodelingprep.com/api/v3/quote/'+encodeURIComponent(fmpSym)+'?apikey='+FMP_KEY)
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var q=Array.isArray(data)?data[0]:data;
+      var vol=(q&&q.volume&&q.volume>0)?q.volume:0;
+      if(vol>0) renderTable(vol);
+      else tryFinnhubVol(); // FMP returned 0, try Finnhub
+    })
+    .catch(tryFinnhubVol);
+  } else {
+    tryFinnhubVol();
   }
 }
 

@@ -311,6 +311,7 @@ tr:hover td{background:var(--bg2)}
           <select class="filter-input" id="db-filter-select" onchange="setDashFilter(this.value)" style="font-size:12px;padding:6px 10px">
             <option value="all">Todas las cuentas</option>
             <option value="real">Real</option>
+            <option value="instant">Real Instant</option>
             <option value="demo">Demo</option>
             <option value="challenge">Challenge</option>
           </select>
@@ -353,7 +354,7 @@ tr:hover td{background:var(--bg2)}
       <div id="page-trades" class="page">
         <div class="filter-bar">
           <input class="filter-input" type="text" id="filter-pair" placeholder="Filtrar par..." style="width:120px" oninput="renderTradesTable()">
-          <select class="filter-input" id="filter-account-type" onchange="renderTradesTable()"><option value="">Tipo</option><option value="real">Real</option><option value="demo">Demo</option><option value="challenge">Challenge</option></select>
+          <select class="filter-input" id="filter-account-type" onchange="renderTradesTable()"><option value="">Tipo</option><option value="real">Real</option><option value="instant">Real Instant</option><option value="demo">Demo</option><option value="challenge">Challenge</option></select>
           <select class="filter-input" id="filter-account" onchange="renderTradesTable()"><option value="">Todas las cuentas</option></select>
           <select class="filter-input" id="filter-dir" onchange="renderTradesTable()"><option value="">Direcci&oacute;n</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
           <select class="filter-input" id="filter-result" onchange="renderTradesTable()"><option value="">Resultado</option><option value="win">Win</option><option value="loss">Loss</option></select>
@@ -398,7 +399,7 @@ tr:hover td{background:var(--bg2)}
         </div>
         <div class="grid3" id="cal-stats"></div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;padding:10px 14px;background:var(--bg1);border:1px solid var(--border2);border-radius:10px">
-          <select class="filter-input" id="cal-type-filter" onchange="renderCalendar()" style="font-size:11px;padding:5px 10px"><option value="">Todos los tipos</option><option value="real">Real</option><option value="demo">Demo</option><option value="challenge">Challenge</option></select>
+          <select class="filter-input" id="cal-type-filter" onchange="renderCalendar()" style="font-size:11px;padding:5px 10px"><option value="">Todos los tipos</option><option value="real">Real</option><option value="instant">Real Instant</option><option value="demo">Demo</option><option value="challenge">Challenge</option></select>
           <select class="filter-input" id="cal-account-filter" onchange="renderCalendar()" style="font-size:11px;padding:5px 10px"><option value="">Todas las cuentas</option></select>
           <div style="display:flex;gap:3px;background:var(--bg2);padding:3px;border-radius:8px">
             <button id="cal-usd-btn" onclick="setCalUnit('usd')" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--cyan);font-size:11px;cursor:pointer;font-family:var(--font)">$</button>
@@ -1971,13 +1972,21 @@ function renderAccountsPage(){
     var ddPct=a.ddPct||0;
     var maxBal=Math.max.apply(null,[a.initialBalance||0].concat(trades.filter(function(t){return t.accountId===a.id&&t.balanceAfter;}).map(function(t){return t.balanceAfter;})));
     var ddLevel=a.ddType==='dynamic'?(maxBal*(1-ddPct/100)):(a.initialBalance||0)*(1-ddPct/100);
-    if(a.type==='challenge'){var cur=a.currentPhase||1,ph=a.phases||1;badge='<span style="font-size:10px;color:var(--gold);background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.3);padding:2px 7px;border-radius:4px;margin-left:4px">FASE '+cur+(ph===2?'/2':'')+'</span>';var goal=cur===1?(a.p1Amt||0):(a.p2Amt||0);prog=renderPBar(pnl,goal,'Progreso Fase '+cur);}
+    var typeLabel={'real':'REAL','instant':'REAL INSTANT','demo':'DEMO','challenge':'CHALLENGE'}[a.type]||(a.type||'real').toUpperCase();
+    if(a.type==='challenge'){var cur=a.currentPhase||1,ph=a.phases||1;badge='<span style="font-size:10px;color:var(--gold);background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.3);padding:2px 7px;border-radius:4px">FASE '+cur+(ph===2?'/2':'')+'</span>';var goal=cur===1?(a.p1Amt||0):(a.p2Amt||0);prog=renderPBar(pnl,goal,'Progreso Fase '+cur);}
     else{var goal2=a.goalAmt||0;if(goal2>0){prog=a.goalReached?'<div style="margin-top:10px;padding:8px;background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.3);border-radius:6px;font-size:11px;color:var(--green);text-align:center">Meta alcanzada!</div>':renderPBar(pnl,goal2,'Progreso hacia la meta');}}
     if(ddPct){meta='<div style="font-size:10px;color:var(--muted);margin-top:4px">DD '+(a.ddType==='dynamic'?'Dinámico':'Fijo')+': <span style="color:var(--red)">'+ddPct+'%</span> Nivel: <b style="color:var(--red)">$'+ddLevel.toFixed(0)+'</b></div>';}
     return '<div class="account-card '+(a.type||'real')+'" onclick="openAccountDetail(\''+a.id+'\')">'
-      +'<div style="display:flex;align-items:flex-start;justify-content:space-between">'
-      +'<div><div style="font-size:14px;font-weight:600">'+a.name+badge+'</div><div style="font-size:11px;color:var(--muted);margin-bottom:4px">'+(a.broker||'Sin broker')+' <span class="badge '+(a.type||'real')+'">'+(a.type||'real').toUpperCase()+'</span></div></div>'
-      +'<div style="display:flex;gap:6px" onclick="event.stopPropagation()"><button class="btn sm" onclick="openAccountModal(\''+a.id+'\')"><i class="ti ti-edit" style="font-size:12px"></i></button><button class="btn sm danger" onclick="deleteAccount(\''+a.id+'\')"><i class="ti ti-trash" style="font-size:12px"></i></button></div></div>'
+      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2px">'
+      +'<div style="font-size:14px;font-weight:600">'+a.name+'</div>'
+      +'<div style="display:flex;gap:6px" onclick="event.stopPropagation()"><button class="btn sm" onclick="openAccountModal(\''+a.id+'\')"><i class="ti ti-edit" style="font-size:12px"></i></button><button class="btn sm danger" onclick="deleteAccount(\''+a.id+'\')"><i class="ti ti-trash" style="font-size:12px"></i></button></div>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;margin-bottom:4px">'
+      +(badge||'')
+      +'<span class="badge '+(a.type||'real')+'" style="font-size:10px">'+typeLabel+'</span>'
+      +'<span style="font-size:11px;color:var(--muted);margin-left:2px">'+(a.broker||'')+'</span>'
+      +'</div>'
+
       +'<div style="font-size:22px;font-weight:700;letter-spacing:-1px;margin:8px 0 2px;color:'+(pnl>=0?'var(--green)':'var(--red)')+'">'+(a.currency||'USD')+' '+bal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div>'
       +'<div style="font-size:11px;color:var(--muted)">P&L: <span class="'+(pnl>=0?'pos':'neg')+'" style="font-weight:600">'+(pnl>=0?'+':'')+'$'+pnl.toFixed(2)+'</span></div>'
       +meta+prog
@@ -2799,7 +2808,18 @@ function renderFuturesTable(){
     FUTURES_DATA=[{month:frontMonth.month,price:0,chg:0,vol:frontVol||0,expiry:frontExpiry}];
   }
 
-  // Try to get front month volume: FMP first, then Finnhub as fallback
+  // Fetch front month volume: Yahoo Finance (MGC=F) → FMP → Finnhub
+  // Yahoo Finance is the most reliable free source for CME futures volume
+  var yahooSymMap={
+    GC:'GC=F', MGC:'MGC=F', SI:'SI=F',
+    NQ:'NQ=F', MNQ:'MNQ=F',
+    ES:'ES=F', MES:'MES=F',
+    YM:'YM=F', MYM:'MYM=F',
+    CL:'CL=F', MCL:'MCL=F',
+    '6E':'6E=F', M6E:'M6E=F',
+    BTC:'BTC=F', MBT:'MBT=F'
+  };
+  var yahooSym=yahooSymMap[key];
   var fmpSym=(typeof FMP_FUTURES_SYMBOLS!=='undefined')?FMP_FUTURES_SYMBOLS[key]:null;
   var fhSym=(typeof FINNHUB_FUTURES_SYMBOLS!=='undefined')?FINNHUB_FUTURES_SYMBOLS[key]:null;
 
@@ -2807,25 +2827,35 @@ function renderFuturesTable(){
     if(!fhSym||typeof FINNHUB_KEY==='undefined'||!FINNHUB_KEY){renderTable(0);return;}
     fetch('https://finnhub.io/api/v1/quote?symbol='+encodeURIComponent(fhSym)+'&token='+FINNHUB_KEY)
     .then(function(r){return r.json();})
-    .then(function(q){
-      var vol=(q&&q.v&&q.v>0)?q.v:0;
-      renderTable(vol);
-    })
+    .then(function(q){renderTable((q&&q.v&&q.v>0)?q.v:0);})
     .catch(function(){renderTable(0);});
   }
 
-  if(fmpSym&&typeof FMP_KEY!=='undefined'&&FMP_KEY){
+  function tryFMPVol(){
+    if(!fmpSym||typeof FMP_KEY==='undefined'||!FMP_KEY){tryFinnhubVol();return;}
     fetch('https://financialmodelingprep.com/api/v3/quote/'+encodeURIComponent(fmpSym)+'?apikey='+FMP_KEY)
     .then(function(r){return r.json();})
     .then(function(data){
       var q=Array.isArray(data)?data[0]:data;
       var vol=(q&&q.volume&&q.volume>0)?q.volume:0;
-      if(vol>0) renderTable(vol);
-      else tryFinnhubVol(); // FMP returned 0, try Finnhub
+      if(vol>0) renderTable(vol); else tryFinnhubVol();
     })
     .catch(tryFinnhubVol);
+  }
+
+  // Yahoo Finance via cors-free proxy (corsproxy.io)
+  if(yahooSym){
+    var yahooUrl='https://corsproxy.io/?'+encodeURIComponent('https://query2.finance.yahoo.com/v8/finance/chart/'+yahooSym+'?interval=1d&range=1d');
+    fetch(yahooUrl)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var meta=d&&d.chart&&d.chart.result&&d.chart.result[0]&&d.chart.result[0].meta;
+      var vol=(meta&&meta.regularMarketVolume&&meta.regularMarketVolume>0)?meta.regularMarketVolume:0;
+      if(vol>0) renderTable(vol); else tryFMPVol();
+    })
+    .catch(tryFMPVol);
   } else {
-    tryFinnhubVol();
+    tryFMPVol();
   }
 }
 
@@ -3094,11 +3124,14 @@ function renderTradesTable(){
   var showEntry=ck('col-entry'),showLots=ck('col-lots'),showPnl=ck('col-pnl'),showBal=ck('col-balance');
   var showEstado=ck('col-estado'),showEmo=ck('col-emo'),showFotos=ck('col-fotos');
   var filtered=trades.filter(function(t){
+    // Exclude trades from archived accounts
+    var acc=accounts.find(function(a){return a.id===t.accountId;});
+    if(!acc)return false;
     if(fp&&!(t.pair||'').toUpperCase().includes(fp.toUpperCase()))return false;
     if(fa&&t.accountId!==fa)return false;
     if(fd&&t.dir!==fd)return false;
     if(fr&&t.result!==fr)return false;
-    if(fat){var acc=accounts.find(function(a){return a.id===t.accountId;});if(!acc||acc.type!==fat)return false;}
+    if(fat&&acc.type!==fat)return false;
     return true;
   });
   var tc=document.getElementById('trade-count');if(tc)tc.textContent=filtered.length+' trade'+(filtered.length!==1?'s':'');

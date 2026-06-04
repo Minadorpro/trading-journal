@@ -2035,8 +2035,10 @@ function renderCalendar(){
   var noWknd=document.getElementById('cal-no-weekend')&&document.getElementById('cal-no-weekend').checked;
   var weeklySum=document.getElementById('cal-weekly-sum')&&document.getElementById('cal-weekly-sum').checked;
   var filtered=trades.filter(function(t){
+    var acc=accounts.find(function(a){return a.id===t.accountId;});
+    if(!acc)return false; // exclude archived
     if(af&&t.accountId!==af)return false;
-    if(atf){var acc=accounts.find(function(a){return a.id===t.accountId;});if(!acc||acc.type!==atf)return false;}
+    if(atf&&acc.type!==atf)return false;
     return true;
   });
   function fmtVal(pnl,accountId){
@@ -3070,9 +3072,10 @@ function setDashFilter(f){
 }
 
 function renderDashboard(){
+  var activeIds=accounts.map(function(a){return a.id;});
   var filtAcc=dashFilter==='all'?accounts:accounts.filter(function(a){return a.type===dashFilter;});
   var accIds=filtAcc.map(function(a){return a.id;});
-  var filtTrades=dashFilter==='all'?trades:trades.filter(function(t){return accIds.indexOf(t.accountId)>=0;});
+  var filtTrades=trades.filter(function(t){return accIds.indexOf(t.accountId)>=0;});
   var total=filtTrades.reduce(function(s,t){return s+(t.pnl||0);},0),wins=filtTrades.filter(function(t){return t.result==='win';}).length;
   var hp=document.getElementById('hero-pnl'),hs=document.getElementById('hero-sub');
   if(hp){hp.textContent=(total>=0?'+':'')+'$'+total.toFixed(2);hp.className=total>=0?'pos':'neg';}
@@ -3148,7 +3151,8 @@ function renderTradesTable(){
 
 function renderStats(){
   var af=(document.getElementById('stats-account-filter')||{}).value||'';
-  var filtered=af?trades.filter(function(t){return t.accountId===af;}):trades;
+  var activeTrades=trades.filter(function(t){return accounts.find(function(a){return a.id===t.accountId;});});
+  var filtered=af?activeTrades.filter(function(t){return t.accountId===af;}):activeTrades;
   var el=document.getElementById('stats-metrics');
   if(!filtered.length){if(el)el.innerHTML='<div class="empty-state" style="grid-column:1/-1"><i class="ti ti-chart-bar"></i>Sin datos</div>';return;}
   var wins=filtered.filter(function(t){return t.result==='win';}),losses=filtered.filter(function(t){return t.result==='loss';});

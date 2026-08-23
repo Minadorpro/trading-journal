@@ -44,12 +44,13 @@ nav{flex:1;padding:12px 8px;overflow-y:auto}
 .btn.ghost{background:none;border-color:var(--border2);color:var(--muted2)}
 .content{padding:24px;flex:1}
 .page{display:none}.page.active{display:block}
-.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}.grid5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:20px}
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:20px}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:20px}
 .card{background:var(--bg1);border:1px solid var(--border2);border-radius:12px;padding:18px;position:relative;overflow:hidden}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan2),transparent);opacity:.4}
 .metric-card{background:var(--bg1);border:1px solid var(--border2);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden}
+.chart-fullscreen{position:fixed!important;top:0;left:0;right:0;bottom:0;z-index:9999;border-radius:0!important;margin:0!important;padding:20px 24px!important;background:var(--bg0)!important;display:flex;flex-direction:column}
 .metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan2),transparent);opacity:.3}
 .metric-label{font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;font-weight:500}
 .metric-value{font-size:24px;font-weight:700;letter-spacing:-1px}
@@ -342,9 +343,9 @@ tr:hover td{background:var(--bg2)}
           <div id="detail-title" style="font-size:18px;font-weight:700"></div>
           <div id="detail-badge"></div>
         </div>
-        <div class="grid4" id="detail-kpis"></div>
+        <div class="grid5" id="detail-kpis"></div>
         <div class="grid2" style="margin-bottom:20px">
-          <div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div class="section-title" style="margin-bottom:0">Balance vs Drawdown</div><div id="detail-dd-info" style="font-size:11px;color:var(--muted)"></div></div><div style="position:relative;width:100%;height:240px"><canvas id="detailChart"></canvas></div></div>
+          <div class="card" id="detail-chart-card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div class="section-title" style="margin-bottom:0">Balance vs Drawdown</div><div style="display:flex;align-items:center;gap:12px"><div id="detail-dd-info" style="font-size:11px;color:var(--muted)"></div><button onclick="toggleChartFullscreen()" id="chart-fs-btn" title="Pantalla completa" style="background:none;border:1px solid var(--border2);border-radius:6px;padding:3px 8px;cursor:pointer;color:var(--muted);font-size:11px;display:flex;align-items:center;gap:4px"><i class="ti ti-arrows-maximize" id="chart-fs-icon" style="font-size:13px"></i><span id="chart-fs-label">Expandir</span></button></div></div><div style="position:relative;width:100%;height:240px" id="detail-chart-wrap"><canvas id="detailChart"></canvas></div></div>
           <div class="card"><div class="section-title">Trades de esta cuenta</div><div id="detail-trades-list"></div></div>
         </div>
         <div class="grid3" id="detail-stats"></div>
@@ -722,6 +723,18 @@ tr:hover td{background:var(--bg2)}
               <label class="toggle-row"><span style="flex:1">Metas alcanzadas</span><label class="toggle"><input type="checkbox" id="notif-goals" checked><span class="toggle-slider"></span></label></label>
             </div>
           </div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="section-title">Copia de seguridad</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;margin-bottom:14px">Exporta todos tus datos (trades, cuentas, inversiones) a un archivo JSON. Guárdalo en un lugar seguro como respaldo.</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <button class="btn" onclick="exportBackup()"><i class="ti ti-download"></i>Descargar backup (JSON)</button>
+              <div style="border-top:1px solid var(--border2);margin:2px 0"></div>
+              <div class="form-group"><label>Restaurar desde backup</label></div>
+              <input type="file" id="backup-file-input" accept=".json" style="display:none" onchange="importBackup(this)">
+              <button class="btn" onclick="document.getElementById('backup-file-input').click()"><i class="ti ti-upload"></i>Importar backup</button>
+              <div id="backup-status" style="font-size:11px;color:var(--muted)"></div>
+            </div>
+          </div>
           <div style="display:flex;gap:10px">
             <button class="btn primary" onclick="doLogout()" style="flex:1"><i class="ti ti-logout"></i>Cerrar sesión</button>
             <button class="btn danger" id="btn-delete-account" onclick="deleteUserAccount()" style="flex:1"><i class="ti ti-trash"></i>Eliminar cuenta</button>
@@ -748,7 +761,7 @@ tr:hover td{background:var(--bg2)}
     </div>
     <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px;margin-bottom:14px">
       <div style="font-size:11px;color:var(--cyan);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-trending-down" style="font-size:14px"></i>Drawdown</div>
-      <div class="form-group" style="margin-bottom:10px"><label>Tipo de drawdown</label><select id="ac-dd-type" onchange="recalcGoals()"><option value="fixed">Fijo &mdash; siempre desde balance inicial</option><option value="dynamic">Din&aacute;mico &mdash; sigue el m&aacute;ximo alcanzado</option></select></div>
+      <div class="form-group" style="margin-bottom:10px"><label>Tipo de drawdown</label><select id="ac-dd-type" onchange="recalcGoals()"><option value="fixed">Fijo &mdash; siempre desde balance inicial</option><option value="eod">EOD Trail &mdash; trailing al cierre del d&iacute;a</option><option value="dynamic">Intraday Trail &mdash; sigue el m&aacute;ximo en tiempo real</option></select></div>
       <div class="form-grid" style="margin-bottom:0">
         <div class="form-group"><label>Max drawdown (%)</label><input type="number" id="ac-dd-pct" placeholder="8" step="any" oninput="recalcGoals()"></div>
         <div class="form-group"><label>Nivel de DD ($)</label><input type="number" id="ac-dd-level" placeholder="Auto" readonly style="color:var(--red)"></div>
@@ -1438,6 +1451,122 @@ function doRegister(){
 
 function doLogout(){if(confirm('Cerrar sesion?'))auth.signOut();}
 
+function toggleChartFullscreen(){
+  var card=document.getElementById('detail-chart-card');
+  var wrap=document.getElementById('detail-chart-wrap');
+  var icon=document.getElementById('chart-fs-icon');
+  var label=document.getElementById('chart-fs-label');
+  var isFs=card.classList.contains('chart-fullscreen');
+  if(!isFs){
+    card.classList.add('chart-fullscreen');
+    wrap.style.height='calc(100vh - 120px)';
+    icon.className='ti ti-arrows-minimize';
+    label.textContent='Reducir';
+    document.addEventListener('keydown',fsEscHandler);
+  } else {
+    card.classList.remove('chart-fullscreen');
+    wrap.style.height='240px';
+    icon.className='ti ti-arrows-maximize';
+    label.textContent='Expandir';
+    document.removeEventListener('keydown',fsEscHandler);
+  }
+  if(detailChartInst)detailChartInst.resize();
+}
+function fsEscHandler(e){if(e.key==='Escape')toggleChartFullscreen();}
+
+function exportBackup(){
+  if(!cu){showToast('Debes estar autenticado','red','');return;}
+  var statusEl=document.getElementById('backup-status');
+  if(statusEl)statusEl.textContent='Exportando...';
+  var backup={version:2,exportedAt:new Date().toISOString(),userId:cu.uid,profile:{},accounts:[],trades:[],investments:[],deposits:[]};
+  var col=db.collection('users').doc(cu.uid);
+  Promise.all([
+    col.get(),
+    col.collection('accounts').get(),
+    col.collection('trades').get(),
+    col.collection('investments').get(),
+    col.collection('deposits').get()
+  ]).then(function(results){
+    // Profile
+    if(results[0].exists){
+      var p=results[0].data();
+      // Remove sensitive fields
+      delete p.photoURL;
+      backup.profile=p;
+    }
+    results[1].docs.forEach(function(d){backup.accounts.push(Object.assign({id:d.id},d.data()));});
+    results[2].docs.forEach(function(d){backup.trades.push(Object.assign({id:d.id},d.data()));});
+    results[3].docs.forEach(function(d){backup.investments.push(Object.assign({id:d.id},d.data()));});
+    results[4].docs.forEach(function(d){backup.deposits.push(Object.assign({id:d.id},d.data()));});
+    var total=backup.accounts.length+backup.trades.length+backup.investments.length+backup.deposits.length;
+    var blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='trading-journal-backup-'+new Date().toISOString().slice(0,10)+'.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    if(statusEl)statusEl.innerHTML='<span style="color:var(--green)">✓ Backup descargado — '+backup.trades.length+' trades · '+backup.accounts.length+' cuentas · '+backup.investments.length+' inversiones · '+backup.deposits.length+' depósitos</span>';
+    showToast('Backup completo exportado','cyan','');
+  }).catch(function(e){
+    if(statusEl)statusEl.innerHTML='<span style="color:var(--red)">Error: '+e.message+'</span>';
+    showToast('Error al exportar','red','');
+  });
+}
+
+function importBackup(input){
+  var file=input.files[0];if(!file)return;
+  var statusEl=document.getElementById('backup-status');
+  if(!confirm('¿Importar backup? Los datos existentes NO se borrarán — se añadirán o actualizarán con los del backup.'))return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var backup=JSON.parse(e.target.result);
+      if(!backup.version||!backup.trades){throw new Error('Archivo no válido');}
+      if(statusEl)statusEl.textContent='Importando datos...';
+      var col=db.collection('users').doc(cu.uid);
+      var promises=[];
+      // Restore profile (except sensitive fields)
+      if(backup.profile&&Object.keys(backup.profile).length){
+        var p=Object.assign({},backup.profile);
+        delete p.uid;delete p.email;
+        promises.push(col.set(p,{merge:true}));
+      }
+      // Batch write accounts
+      (backup.accounts||[]).forEach(function(a){
+        var id=a.id;var data=Object.assign({},a);delete data.id;
+        promises.push(col.collection('accounts').doc(id).set(data,{merge:true}));
+      });
+      // Batch write trades
+      (backup.trades||[]).forEach(function(t){
+        var id=t.id;var data=Object.assign({},t);delete data.id;
+        promises.push(col.collection('trades').doc(id).set(data,{merge:true}));
+      });
+      // Batch write investments
+      (backup.investments||[]).forEach(function(i){
+        var id=i.id;var data=Object.assign({},i);delete data.id;
+        promises.push(col.collection('investments').doc(id).set(data,{merge:true}));
+      });
+      // Batch write deposits
+      (backup.deposits||[]).forEach(function(d){
+        var id=d.id;var data=Object.assign({},d);delete data.id;
+        promises.push(col.collection('deposits').doc(id).set(data,{merge:true}));
+      });
+      var total=(backup.accounts||[]).length+(backup.trades||[]).length+(backup.investments||[]).length+(backup.deposits||[]).length;
+      Promise.all(promises).then(function(){
+        if(statusEl)statusEl.innerHTML='<span style="color:var(--green)">✓ Backup restaurado — '+total+' documentos importados</span>';
+        showToast('Backup importado correctamente','cyan','');
+        input.value='';
+      }).catch(function(err){
+        if(statusEl)statusEl.innerHTML='<span style="color:var(--red)">Error: '+err.message+'</span>';
+      });
+    }catch(err){
+      if(statusEl)statusEl.innerHTML='<span style="color:var(--red)">Error: '+err.message+'</span>';
+      showToast('Archivo inválido','red','');
+    }
+  };
+  reader.readAsText(file);
+}
+
 function checkAdminPass(){
   var v=document.getElementById('admin-pass-input').value;
   var err=document.getElementById('admin-pass-err');
@@ -1581,25 +1710,52 @@ function renderAccountDetail(acc){
   var accTrades=trades.filter(function(t){return t.accountId===acc.id;}).sort(function(a,b){return (a.entryDate||'')>(b.entryDate||'')?1:-1;});
   var ib=acc.initialBalance||0;
   var cum=0,maxBal=ib;
-  var balPoints=[],ddPoints=[],labels=[];
+  var balPoints=[],ddPoints=[],dlPoints=[],labels=[];
   var ddFrac=((acc.ddPct||8))/100;
+  var dlFrac=((acc.dlPct||5))/100;
+  var dlAmt=ib*dlFrac; // Daily loss limit in $ (FTMO style: always from initial balance)
+  // Group trades by day for EOD daily loss calculation
+  var tradesByDay={};
+  accTrades.forEach(function(t){
+    var day=t.entryDate?t.entryDate.slice(0,10):'';
+    if(!tradesByDay[day])tradesByDay[day]=0;
+    tradesByDay[day]+=(t.pnl||0);
+  });
   accTrades.forEach(function(t,i){
     cum+=(t.pnl||0);
     var bal=ib+cum;
     maxBal=Math.max(maxBal,bal);
     balPoints.push(parseFloat(bal.toFixed(2)));
-    ddPoints.push(acc.ddType==='dynamic'?parseFloat((maxBal*(1-ddFrac)).toFixed(2)):parseFloat((ib*(1-ddFrac)).toFixed(2)));
+    ddPoints.push(acc.ddType==='dynamic'||acc.ddType==='eod'?parseFloat((maxBal*(1-ddFrac)).toFixed(2)):parseFloat((ib*(1-ddFrac)).toFixed(2)));
+    // Daily limit line: balance at start of day minus dlAmt (FTMO: fixed from initial balance each day)
+    dlPoints.push(parseFloat((bal-dlAmt).toFixed(2)));
     labels.push(t.entryDate?t.entryDate.slice(5,10):'T'+(i+1));
   });
-  if(!balPoints.length){balPoints.push(ib);ddPoints.push(ib*(1-ddFrac));labels.push('Inicio');}
+  if(!balPoints.length){balPoints.push(ib);ddPoints.push(ib*(1-ddFrac));dlPoints.push(ib-dlAmt);labels.push('Inicio');}
+  // Today's daily loss: sum of trades today
+  var today=new Date().toISOString().slice(0,10);
+  var todayPnl=accTrades.filter(function(t){return (t.entryDate||'').slice(0,10)===today;}).reduce(function(s,t){return s+(t.pnl||0);},0);
+  var dlLossToday=Math.min(0,todayPnl); // only count losses (negative values)
+  var dlRemaining=dlAmt+dlLossToday; // available limit = max loss - losses already taken today
+  var dlUsed=dlLossToday; // negative = loss used today
   var currentBal=ib+cum;
-  var currentDD=acc.ddType==='dynamic'?maxBal*(1-ddFrac):ib*(1-ddFrac);
+  var currentDD=(acc.ddType==='dynamic'||acc.ddType==='eod')?maxBal*(1-ddFrac):ib*(1-ddFrac);
   var ddUsed=currentBal-currentDD;
   var ddP=acc.ddPct||8;
   var ddInfoEl=document.getElementById('detail-dd-info');
-  if(ddInfoEl)ddInfoEl.innerHTML='Tipo: <b style="color:'+(acc.ddType==='dynamic'?'var(--cyan)':'var(--gold)')+'">'+( acc.ddType==='dynamic'?'Dinamico':'Fijo')+'</b> DD: <b style="color:var(--red)">'+ddP+'%</b>';
+  var ddLabel=acc.ddType==='dynamic'?'Intraday Trail':acc.ddType==='eod'?'EOD Trail':'Fijo';var ddColor=acc.ddType==='dynamic'?'var(--cyan)':acc.ddType==='eod'?'var(--green)':'var(--gold)';if(ddInfoEl)ddInfoEl.innerHTML='Tipo: <b style="color:'+ddColor+'">'+ddLabel+'</b> DD: <b style="color:var(--red)">'+ddP+'%</b>';
   var kpiEl=document.getElementById('detail-kpis');
-  if(kpiEl)kpiEl.innerHTML='<div class="metric-card"><div class="metric-label">Balance actual</div><div class="metric-value '+(cum>=0?'pos':'neg')+'">$'+currentBal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div><div class="metric-card"><div class="metric-label">P&L total</div><div class="metric-value '+(cum>=0?'pos':'neg')+'">'+(cum>=0?'+':'')+'$'+cum.toFixed(2)+'</div></div><div class="metric-card"><div class="metric-label">Nivel drawdown</div><div class="metric-value neg">$'+currentDD.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div><div class="metric-card"><div class="metric-label">Margen sobre DD</div><div class="metric-value '+(ddUsed>0?'pos':'neg')+'">'+(ddUsed>=0?'+':'')+'$'+ddUsed.toFixed(2)+'</div></div>';
+  var dlColor=dlRemaining>dlAmt*0.5?'pos':dlRemaining>0?'gold':'neg';
+  // Real safe limit today = min(daily limit remaining, margin above max DD)
+  var ddMargin=currentBal-currentDD; // how far above the DD floor we are
+  var realSafeLimit=acc.dlPct?Math.min(dlRemaining,ddMargin):ddMargin;
+  var safeColor=realSafeLimit>dlAmt*0.5?'pos':realSafeLimit>0?'gold':'neg';
+  if(kpiEl)kpiEl.innerHTML=''
+    +'<div class="metric-card"><div class="metric-label">Balance actual</div><div class="metric-value '+(cum>=0?'pos':'neg')+'">$'+currentBal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>'
+    +'<div class="metric-card"><div class="metric-label">P&L total</div><div class="metric-value '+(cum>=0?'pos':'neg')+'">'+(cum>=0?'+':'')+'$'+cum.toFixed(2)+'</div></div>'
+    +'<div class="metric-card"><div class="metric-label">Nivel drawdown</div><div class="metric-value neg">$'+currentDD.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>'
+    +(acc.dlPct?'<div class="metric-card"><div class="metric-label">Puedo perder hoy</div><div class="metric-value '+safeColor+'">'+(realSafeLimit>0?'$'+realSafeLimit.toFixed(2):'<span style=\"color:var(--red)\">LÍMITE ALCANZADO</span>')+'<div style="font-size:9px;color:var(--muted);margin-top:2px">'+(realSafeLimit<dlRemaining?'Limitado por DD máx':'Daily limit: $'+dlAmt.toFixed(0))+(Math.abs(dlUsed)>0?' · Usado: $'+Math.abs(dlUsed).toFixed(2):'')+'</div></div></div>':'')
+    +'<div class="metric-card"><div class="metric-label">Margen sobre DD</div><div class="metric-value '+(ddUsed>0?'pos':'neg')+'">'+(ddUsed>=0?'+':'')+'$'+ddUsed.toFixed(2)+'</div></div>';
   // Reloj en detalle
   var clockEl=document.getElementById('detail-clock');
   if(clockEl){clockEl.innerHTML=renderAccountClockWithProgress(acc,cum);clockEl.dataset.accId=acc.id;clockEl.dataset.accPnl=cum;}
@@ -1616,10 +1772,23 @@ function renderAccountDetail(acc){
   var ctx=document.getElementById('detailChart');
   if(ctx){if(detailChartInst)detailChartInst.destroy();
     var ibLine=new Array(labels.length).fill(ib);
+    // Build gradient fill for balance line (green above initial, red below)
+    var detailCtx=ctx.getContext('2d');
+    var detailH=ctx.offsetHeight||240;
+    var detailGrad=detailCtx.createLinearGradient(0,0,0,detailH);
+    var maxBP=Math.max.apply(null,balPoints)||ib;
+    var minBP=Math.min.apply(null,balPoints)||ib;
+    var rangeP=maxBP-minBP||1;
+    var zeroP=(maxBP-ib)/rangeP;
+    zeroP=Math.max(0,Math.min(1,zeroP));
+    detailGrad.addColorStop(0,'rgba(0,200,100,0.18)');
+    if(zeroP>0&&zeroP<1){detailGrad.addColorStop(zeroP,'rgba(0,200,100,0.04)');detailGrad.addColorStop(zeroP,'rgba(255,60,80,0.04)');}
+    detailGrad.addColorStop(1,'rgba(255,60,80,0.18)');
     detailChartInst=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[
-      {label:'Balance',data:balPoints,borderColor:'#00d4ff',fill:false,tension:.3,pointRadius:3,pointBackgroundColor:'#00d4ff',pointBorderColor:'#05070f',pointBorderWidth:2},
+      {label:'Balance',data:balPoints,borderColor:'#00d4ff',backgroundColor:detailGrad,fill:true,tension:.3,pointRadius:3,pointBackgroundColor:function(c){return (c.raw||0)>=ib?'#00c864':'#ff4560';},pointBorderColor:'#05070f',pointBorderWidth:2},
       {label:'Drawdown',data:ddPoints,borderColor:'#ff4560',fill:false,tension:0,pointRadius:0,borderDash:[4,3],borderWidth:1.5},
-      {label:'Balance inicial',data:ibLine,borderColor:'#94a3b8',fill:false,tension:0,pointRadius:0,borderDash:[6,4],borderWidth:1.2}
+      {label:'Balance inicial',data:ibLine,borderColor:'#94a3b8',fill:false,tension:0,pointRadius:0,borderDash:[6,4],borderWidth:1.2},
+      ...(acc.dlPct?[{label:'Daily limit',data:dlPoints,borderColor:'#f0b429',fill:false,tension:0,pointRadius:0,borderDash:[2,3],borderWidth:1.2}]:[])
     ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11},boxWidth:10}}},scales:{x:{ticks:{maxTicksLimit:8,color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}}}}});
   }
   var wins=accTrades.filter(function(t){return t.result==='win';});
@@ -1971,11 +2140,11 @@ function renderAccountsPage(){
     var badge='',prog='',meta='';
     var ddPct=a.ddPct||0;
     var maxBal=Math.max.apply(null,[a.initialBalance||0].concat(trades.filter(function(t){return t.accountId===a.id&&t.balanceAfter;}).map(function(t){return t.balanceAfter;})));
-    var ddLevel=a.ddType==='dynamic'?(maxBal*(1-ddPct/100)):(a.initialBalance||0)*(1-ddPct/100);
+    var ddLevel=(a.ddType==='dynamic'||a.ddType==='eod')?(maxBal*(1-ddPct/100)):(a.initialBalance||0)*(1-ddPct/100);
     var typeLabel={'real':'REAL','instant':'REAL INSTANT','demo':'DEMO','challenge':'CHALLENGE'}[a.type]||(a.type||'real').toUpperCase();
     if(a.type==='challenge'){var cur=a.currentPhase||1,ph=a.phases||1;badge='<span style="font-size:10px;color:var(--gold);background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.3);padding:2px 7px;border-radius:4px">FASE '+cur+(ph===2?'/2':'')+'</span>';var goal=cur===1?(a.p1Amt||0):(a.p2Amt||0);prog=renderPBar(pnl,goal,'Progreso Fase '+cur);}
     else{var goal2=a.goalAmt||0;if(goal2>0){prog=a.goalReached?'<div style="margin-top:10px;padding:8px;background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.3);border-radius:6px;font-size:11px;color:var(--green);text-align:center">Meta alcanzada!</div>':renderPBar(pnl,goal2,'Progreso hacia la meta');}}
-    if(ddPct){meta='<div style="font-size:10px;color:var(--muted);margin-top:4px">DD '+(a.ddType==='dynamic'?'Dinámico':'Fijo')+': <span style="color:var(--red)">'+ddPct+'%</span> Nivel: <b style="color:var(--red)">$'+ddLevel.toFixed(0)+'</b></div>';}
+    if(ddPct){var ddMeta=a.ddType==='dynamic'?'Intraday Trail':a.ddType==='eod'?'EOD Trail':'Fijo';meta='<div style="font-size:10px;color:var(--muted);margin-top:4px">DD '+ddMeta+': <span style="color:var(--red)">'+ddPct+'%</span> Nivel: <b style="color:var(--red)">$'+ddLevel.toFixed(0)+'</b></div>';}
     return '<div class="account-card '+(a.type||'real')+'" onclick="openAccountDetail(\''+a.id+'\')">'
       +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2px">'
       +'<div style="font-size:14px;font-weight:600">'+a.name+'</div>'
@@ -3106,7 +3275,17 @@ function renderEquity(fTrades){
   var cum=0;var labels=sorted.map(function(x){return x.entryDate?x.entryDate.slice(5,10):'-';});
   var data=sorted.map(function(x){cum+=(x.pnl||0);return parseFloat(cum.toFixed(2));});
   if(eqChart)eqChart.destroy();
-  eqChart=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{label:'Equity',data:data,borderColor:'#00d4ff',backgroundColor:'rgba(0,212,255,.06)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#00d4ff',pointBorderColor:'#05070f',pointBorderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:8,color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}}}}});
+  var eqGrad=ctx.getContext('2d').createLinearGradient(0,0,0,ctx.offsetHeight||200);
+  var maxPos=Math.max.apply(null,data.concat([0]));
+  var minVal=Math.min.apply(null,data.concat([0]));
+  var range=maxPos-minVal||1;
+  var zeroRatio=maxPos/range;
+  zeroRatio=Math.max(0,Math.min(1,zeroRatio));
+  eqGrad.addColorStop(0,'rgba(0,200,100,0.25)');
+  if(zeroRatio>0&&zeroRatio<1){eqGrad.addColorStop(zeroRatio,'rgba(0,200,100,0.05)');eqGrad.addColorStop(zeroRatio,'rgba(255,60,80,0.05)');}
+  eqGrad.addColorStop(1,'rgba(255,60,80,0.25)');
+  var lastVal=data[data.length-1]||0;
+  eqChart=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{label:'Equity',data:data,borderColor:lastVal>=0?'#00d4ff':'#ff4560',backgroundColor:eqGrad,fill:true,tension:.4,pointRadius:3,pointBackgroundColor:function(c){return (c.raw||0)>=0?'#00c864':'#ff4560';},pointBorderColor:'#05070f',pointBorderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:8,color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}}}}}});
 }
 
 function renderRecent(fTrades){
@@ -3522,7 +3701,8 @@ function loadAdminMapa(){
 
     loadScript('https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js',function(){
       loadScript('https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js',function(){
-        fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(function(r){return r.json();}).then(function(world){
+        fetch('https://corsproxy.io/?'+encodeURIComponent('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')).then(function(r){return r.json();}).then(function(world){
+          if(!world||!world.objects){mapDiv.innerHTML='<div style="padding:20px;color:var(--muted);font-size:12px">No se pudo cargar el mapa.</div>';return;}
           var W=mapDiv.offsetWidth||680,H=440;
 
           // Hint de controles

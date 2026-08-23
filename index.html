@@ -320,7 +320,9 @@ tr:hover td{background:var(--bg2)}
       </div>
 
       <div id="page-accounts" class="page">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="display:flex;gap:6px"><button id="view-cards-btn" onclick="setAccountView('cards')" class="btn sm" style="background:var(--cyan3);color:var(--cyan);border-color:var(--cyan)"><i class="ti ti-layout-cards" style="font-size:13px"></i> Tarjetas</button><button id="view-table-btn" onclick="setAccountView('table')" class="btn sm"><i class="ti ti-table" style="font-size:13px"></i> Tabla</button></div></div>
         <div class="accounts-grid" id="accounts-grid"></div>
+        <div id="accounts-table-wrap" style="display:none;overflow-x:auto"></div>
         <div style="margin-top:16px">
           <button class="btn sm" onclick="showArchivedAccounts()" style="color:var(--muted2)"><i class="ti ti-archive" style="font-size:13px"></i>Cuentas archivadas</button>
         </div>
@@ -330,7 +332,7 @@ tr:hover td{background:var(--bg2)}
         </div>
       </div>
       <div id="page-invested" class="page">
-        <div class="grid3" style="margin-bottom:16px" id="invested-kpis"></div>
+        <div class="grid4" style="margin-bottom:16px" id="invested-kpis"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
           <div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="section-title" style="margin-bottom:0">Inversiones</div><button class="btn sm primary" onclick="openInvestmentModal()"><i class="ti ti-plus"></i>Agregar</button></div><div id="investments-list"></div></div>
           <div class="card"><div class="section-title">ROI en el tiempo</div><div style="position:relative;height:200px"><canvas id="roiChart"></canvas></div></div>
@@ -1772,25 +1774,16 @@ function renderAccountDetail(acc){
   var ctx=document.getElementById('detailChart');
   if(ctx){if(detailChartInst)detailChartInst.destroy();
     var ibLine=new Array(labels.length).fill(ib);
-    // Build gradient fill for balance line (green above initial, red below)
-    var detailCtx=ctx.getContext('2d');
-    var detailH=ctx.offsetHeight||240;
-    var detailGrad=detailCtx.createLinearGradient(0,0,0,detailH);
-    var maxBP=Math.max.apply(null,balPoints)||ib;
-    var minBP=Math.min.apply(null,balPoints)||ib;
-    var rangeP=maxBP-minBP||1;
-    var zeroP=(maxBP-ib)/rangeP;
-    zeroP=Math.max(0,Math.min(1,zeroP));
-    detailGrad.addColorStop(0,'rgba(0,200,100,0.18)');
-    if(zeroP>0&&zeroP<1){detailGrad.addColorStop(zeroP,'rgba(0,200,100,0.04)');detailGrad.addColorStop(zeroP,'rgba(255,60,80,0.04)');}
-    detailGrad.addColorStop(1,'rgba(255,60,80,0.18)');
     detailChartInst=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[
-      {label:'Balance',data:balPoints,borderColor:'#00d4ff',backgroundColor:detailGrad,fill:true,tension:.3,pointRadius:3,pointBackgroundColor:function(c){return (c.raw||0)>=ib?'#00c864':'#ff4560';},pointBorderColor:'#05070f',pointBorderWidth:2},
+      {label:'Balance',data:balPoints,
+        borderColor:balPoints[balPoints.length-1]>=ib?'#00c864':'#ff4560',
+        backgroundColor:'transparent',fill:false,tension:.3,pointRadius:3,
+        pointBackgroundColor:function(c){return (c.raw||0)>=ib?'#00c864':'#ff4560';},
+        pointBorderColor:'#05070f',pointBorderWidth:2},
       {label:'Drawdown',data:ddPoints,borderColor:'#ff4560',fill:false,tension:0,pointRadius:0,borderDash:[4,3],borderWidth:1.5},
       {label:'Balance inicial',data:ibLine,borderColor:'#94a3b8',fill:false,tension:0,pointRadius:0,borderDash:[6,4],borderWidth:1.2},
-      ...(acc.dlPct?[{label:'Daily limit',data:dlPoints,borderColor:'#f0b429',fill:false,tension:0,pointRadius:0,borderDash:[2,3],borderWidth:1.2}]:[])
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11},boxWidth:10}}},scales:{x:{ticks:{maxTicksLimit:8,color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}}}}});
-  }
+      {label:'Daily limit',data:acc.dlPct?dlPoints:dlPoints.map(function(){return null;}),borderColor:'#f0b429',fill:false,tension:0,pointRadius:0,borderDash:[2,3],borderWidth:1.2,hidden:!acc.dlPct}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11},boxWidth:10}}},scales:{x:{ticks:{maxTicksLimit:8,color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}}}}},[{id:'grad',afterDraw:function(chart){var meta=chart.getDatasetMeta(0);if(!meta||!meta.data||meta.data.length<2)return;var ctx2=chart.ctx,yScale=chart.scales.y,ca=chart.chartArea;var yIb=yScale.getPixelForValue(ib);ctx2.save();ctx2.beginPath();meta.data.forEach(function(pt,i){i===0?ctx2.moveTo(pt.x,pt.y):ctx2.lineTo(pt.x,pt.y);});ctx2.lineTo(meta.data[meta.data.length-1].x,ca.bottom);ctx2.lineTo(meta.data[0].x,ca.bottom);ctx2.closePath();var grad=ctx2.createLinearGradient(0,ca.top,0,ca.bottom);var r=Math.max(0.001,Math.min(0.999,(yIb-ca.top)/(ca.bottom-ca.top)));grad.addColorStop(0,'rgba(0,200,100,0.2)');grad.addColorStop(Math.max(0,r-0.001),'rgba(0,200,100,0.06)');grad.addColorStop(Math.min(1,r+0.001),'rgba(255,60,80,0.06)');grad.addColorStop(1,'rgba(255,60,80,0.2)');ctx2.fillStyle=grad;ctx2.fill();ctx2.restore();}}]);  }
   var wins=accTrades.filter(function(t){return t.result==='win';});
   var wr=accTrades.length?(wins.length/accTrades.length*100).toFixed(1):0;
   var statsEl=document.getElementById('detail-stats');
@@ -2048,7 +2041,6 @@ function saveInvestment(){
   document.getElementById('investment-modal').classList.remove('open');
 }
 function renderInvestedPage(){
-  // If listener hasn't loaded yet, fetch directly
   if(!investments.length && cu){
     db.collection('users').doc(cu.uid).collection('investments').get().then(function(snap){
       if(!snap.empty){
@@ -2058,31 +2050,58 @@ function renderInvestedPage(){
       }
     });
   }
-  var totalInvested=investments.reduce(function(s,i){return s+(i.amount||0);},0);
+  var invAccounts=investments.filter(function(i){return i.type==='account';});
+  var invCourses=investments.filter(function(i){return i.type==='course';});
+  var invTools=investments.filter(function(i){return i.type==='tool';});
+  var invOther=investments.filter(function(i){return i.type!=='account'&&i.type!=='course'&&i.type!=='tool';});
+  var totalAccounts=invAccounts.reduce(function(s,i){return s+(i.amount||0);},0);
+  var totalCourses=invCourses.reduce(function(s,i){return s+(i.amount||0);},0);
+  var totalTools=invTools.reduce(function(s,i){return s+(i.amount||0);},0);
+  var totalOther=invOther.reduce(function(s,i){return s+(i.amount||0);},0);
+  var totalInvested=totalAccounts+totalCourses+totalTools+totalOther;
   var totalPayouts=accounts.reduce(function(s,a){return s+(a.totalPayouts||0);},0);
   var netPnl=totalPayouts-totalInvested;
   var roi=totalInvested>0?(netPnl/totalInvested*100):0;
-  var challengeAccs=accounts.filter(function(a){return a.type==='challenge';}).length;
-  var fundedAccs=accounts.filter(function(a){return a.type==='real'&&(a.totalPayouts||0)>0;}).length;
+  var roiAccounts=totalAccounts>0?((totalPayouts-totalAccounts)/totalAccounts*100):0;
   var kEl=document.getElementById('invested-kpis');
-  if(kEl)kEl.innerHTML='<div class="metric-card"><div class="metric-label">ROI Total</div><div class="metric-value '+(roi>=0?'pos':'neg')+'" style="font-size:28px;font-weight:800">'+(roi>=0?'+':'')+roi.toFixed(1)+'%</div><div style="font-size:11px;color:var(--muted);margin-top:4px">'+(netPnl>=0?'+':'')+'$'+netPnl.toFixed(2)+' neto</div></div>'
-    +'<div class="metric-card"><div class="metric-label">Total invertido</div><div class="metric-value neutral" style="font-size:22px;font-weight:800">$'+totalInvested.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>'
-    +'<div class="metric-card"><div class="metric-label">Cuentas challenge</div><div class="metric-value neutral" style="font-size:22px;font-weight:800">'+challengeAccs+'</div><div style="font-size:11px;color:var(--muted);margin-top:4px">Funded: '+fundedAccs+'</div></div>';
+  if(kEl)kEl.innerHTML=''
+    +'<div class="metric-card"><div class="metric-label">ROI Total</div><div class="metric-value '+(roi>=0?'pos':'neg')+'" style="font-size:28px;font-weight:800">'+(roi>=0?'+':'')+roi.toFixed(1)+'%</div><div style="font-size:11px;color:var(--muted);margin-top:4px">'+(netPnl>=0?'+':'')+'$'+netPnl.toFixed(2)+' neto</div></div>'
+    +'<div class="metric-card"><div class="metric-label">Total invertido</div><div class="metric-value neutral" style="font-size:22px;font-weight:800">$'+totalInvested.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Cuentas: $'+totalAccounts.toFixed(0)+' · Formacion: $'+(totalCourses+totalTools).toFixed(0)+'</div></div>'
+    +'<div class="metric-card"><div class="metric-label">Retiros acumulados</div><div class="metric-value '+(totalPayouts>0?'pos':'neutral')+'" style="font-size:22px;font-weight:800">$'+totalPayouts.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>'
+    +'<div class="metric-card"><div class="metric-label">ROI sobre cuentas</div><div class="metric-value '+(roiAccounts>=0?'pos':'neg')+'" style="font-size:22px;font-weight:800">'+(roiAccounts>=0?'+':'')+roiAccounts.toFixed(1)+'%</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Excluye formacion</div></div>';
   var lEl=document.getElementById('investments-list');
-  if(lEl){
-    if(!investments.length){lEl.innerHTML='<div class="empty-state"><i class="ti ti-coin"></i>Sin inversiones aún</div>';return;}
-    lEl.innerHTML=investments.map(function(inv){
-      var typeLabels={account:'Cuenta fondeo',course:'Curso',tool:'Herramienta',other:'Otro'};
-      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border2)">'
+  if(!lEl)return;
+  if(!investments.length){lEl.innerHTML='<div class="empty-state"><i class="ti ti-coin"></i>Sin inversiones aun</div>';return;}
+  function renderSection(title,icon,color,items,total){
+    if(!items.length)return'';
+    var typeLabels={account:'Cuenta fondeo',course:'Curso / formacion',tool:'Herramienta / software',other:'Otro'};
+    var rows=items.map(function(inv){
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border2)">'
         +'<div><div style="font-size:12px;font-weight:600">'+inv.name+'</div>'
-        +'<div style="font-size:10px;color:var(--muted)">'+(typeLabels[inv.type]||'Otro')+' · '+(inv.date||'--')+'</div>'
+        +'<div style="font-size:10px;color:var(--muted)">'+(typeLabels[inv.type]||'Otro')+' - '+(inv.date||'--')+'</div>'
         +(inv.notes?'<div style="font-size:10px;color:var(--muted2)">'+inv.notes+'</div>':'')+'</div>'
         +'<div style="display:flex;align-items:center;gap:8px">'
-        +'<span style="font-size:14px;font-weight:700;color:var(--red)">-$'+( inv.amount||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span>'
-        +'<button class="btn sm danger" onclick="deleteInvestment(\''+inv.id+'\')"><i class="ti ti-trash" style="font-size:11px"></i></button>'
+        +'<span style="font-size:13px;font-weight:700;color:var(--red)">-$'+(inv.amount||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span>'
+        +'<button class="btn sm danger" onclick="deleteInvestment(&quot;'+inv.id+'&quot;)"><i class="ti ti-trash" style="font-size:11px"></i></button>'
         +'</div></div>';
     }).join('');
+    return '<div style="margin-bottom:20px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid '+color+'">'
+      +'<div style="display:flex;align-items:center;gap:8px"><i class="ti '+icon+'" style="color:'+color+'"></i>'
+      +'<span style="font-size:12px;font-weight:700;color:'+color+';letter-spacing:.5px;text-transform:uppercase">'+title+'</span>'
+      +'<span style="font-size:11px;color:var(--muted)">('+items.length+')</span></div>'
+      +'<span style="font-size:13px;font-weight:700;color:var(--red)">-$'+total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span>'
+      +'</div>'+rows+'</div>';
   }
+  lEl.innerHTML=''
+    +renderSection('Cuentas de fondeo','ti-wallet','var(--cyan)',invAccounts,totalAccounts)
+    +renderSection('Cursos y formacion','ti-school','var(--gold)',invCourses,totalCourses)
+    +renderSection('Herramientas','ti-tool','var(--purple)',invTools,totalTools)
+    +renderSection('Otros','ti-dots','var(--muted)',invOther,totalOther)
+    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:2px solid var(--border);margin-top:4px">'
+    +'<span style="font-weight:700;font-size:13px">TOTAL INVERTIDO</span>'
+    +'<span style="font-size:16px;font-weight:800;color:var(--red)">-$'+totalInvested.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span>'
+    +'</div>';
 }
 function deleteInvestment(id){if(!confirm('¿Eliminar esta inversión?'))return;db.collection('users').doc(cu.uid).collection('investments').doc(id).delete();}
 
@@ -2131,9 +2150,69 @@ function renderPBar(pnl,goal,label){
   return '<div class="progress-wrap"><div class="progress-label"><span style="font-size:11px;color:var(--muted)">'+label+'</span><span style="font-size:12px;font-weight:700;color:'+col+'">'+pct.toFixed(1)+'%</span></div><div class="progress-bar-bg"><div class="progress-bar-fill" style="width:'+pct+'%;background:'+col+'"></div></div><div class="progress-info"><span>Ganado: <b style="color:'+(pnl>=0?'var(--green)':'var(--red)')+'">'+(pnl>=0?'+':'')+'$'+pnl.toFixed(2)+'</b></span><span>Faltante: <b>$'+rem.toFixed(2)+'</b></span></div></div>';
 }
 
+var accountView='cards';
+function setAccountView(v){
+  accountView=v;
+  var cardBtn=document.getElementById('view-cards-btn');
+  var tableBtn=document.getElementById('view-table-btn');
+  var grid=document.getElementById('accounts-grid');
+  var tableWrap=document.getElementById('accounts-table-wrap');
+  if(v==='cards'){
+    if(cardBtn){cardBtn.style.background='var(--cyan3)';cardBtn.style.color='var(--cyan)';cardBtn.style.borderColor='var(--cyan)';}
+    if(tableBtn){tableBtn.style.background='';tableBtn.style.color='';tableBtn.style.borderColor='';}
+    if(grid)grid.style.display='';
+    if(tableWrap)tableWrap.style.display='none';
+  } else {
+    if(tableBtn){tableBtn.style.background='var(--cyan3)';tableBtn.style.color='var(--cyan)';tableBtn.style.borderColor='var(--cyan)';}
+    if(cardBtn){cardBtn.style.background='';cardBtn.style.color='';cardBtn.style.borderColor='';}
+    if(grid)grid.style.display='none';
+    if(tableWrap)tableWrap.style.display='';
+    renderAccountsTable();
+  }
+}
+
+function renderAccountsTable(){
+  var wrap=document.getElementById('accounts-table-wrap');if(!wrap)return;
+  if(!accounts.length){wrap.innerHTML='<div class="empty-state"><i class="ti ti-wallet"></i><div>Sin cuentas aun</div></div>';return;}
+  var cols=['NOMBRE','TIPO','BROKER','BALANCE','P&L','DD NIVEL','MARGEN DD','TRADES','WIN RATE','ESTADO',''];
+  var html='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+  html+='<thead><tr>';
+  cols.forEach(function(c){html+='<th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.5px;border-bottom:1px solid var(--border2);white-space:nowrap">'+c+'</th>';});
+  html+='</tr></thead><tbody>';
+  accounts.forEach(function(a){
+    var pnl=getAccPnl(a.id);
+    var bal=getAccBal(a.id);
+    var at=trades.filter(function(t){return t.accountId===a.id;});
+    var wr=at.length?(at.filter(function(t){return t.result==='win';}).length/at.length*100).toFixed(1):0;
+    var ddPct=a.ddPct||0;
+    var maxBal=Math.max.apply(null,[a.initialBalance||0].concat(at.filter(function(t){return t.balanceAfter;}).map(function(t){return t.balanceAfter;})));
+    var ddLevel=(a.ddType==='dynamic'||a.ddType==='eod')?(maxBal*(1-ddPct/100)):(a.initialBalance||0)*(1-ddPct/100);
+    var margin=bal-ddLevel;
+    var typeLabel={'real':'Real','instant':'Real Instant','demo':'Demo','challenge':'Challenge'}[a.type]||(a.type||'real');
+    var typeBadgeColor={'real':'var(--cyan)','instant':'var(--green)','demo':'var(--purple)','challenge':'var(--gold)'}[a.type]||'var(--muted)';
+    var phase=a.type==='challenge'?(' F'+(a.currentPhase||1)):'';
+    html+='<tr onclick="openAccountDetail(\''+a.id+'\')" style="cursor:pointer;border-bottom:1px solid var(--border2);transition:background .15s" onmouseover="this.style.background=\'var(--bg2)\'" onmouseout="this.style.background=\'\'">';
+    html+='<td style="padding:10px 12px;font-weight:600">'+a.name+'</td>';
+    html+='<td style="padding:10px 12px"><span style="font-size:10px;color:'+typeBadgeColor+';background:rgba(0,0,0,.1);border:1px solid '+typeBadgeColor+';padding:2px 7px;border-radius:4px;white-space:nowrap">'+typeLabel+phase+'</span></td>';
+    html+='<td style="padding:10px 12px;color:var(--muted2)">'+(a.broker||'—')+'</td>';
+    html+='<td style="padding:10px 12px;font-family:monospace;font-weight:700;color:'+(pnl>=0?'var(--green)':'var(--red)')+'">$'+bal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>';
+    html+='<td style="padding:10px 12px;font-weight:700;color:'+(pnl>=0?'var(--green)':'var(--red)')+'\">'+(pnl>=0?'+':'')+'$'+pnl.toFixed(2)+'</td>';
+    html+='<td style="padding:10px 12px;color:var(--red);font-family:monospace">'+(ddPct?'$'+ddLevel.toFixed(0):'—')+'</td>';
+    html+='<td style="padding:10px 12px;font-weight:700;color:'+(margin>0?'var(--green)':'var(--red)')+'\">'+(ddPct?(margin>=0?'+':'')+'$'+margin.toFixed(0):'—')+'</td>';
+    html+='<td style="padding:10px 12px;color:var(--muted2)">'+at.length+'</td>';
+    html+='<td style="padding:10px 12px">'+wr+'%</td>';
+    html+='<td style="padding:10px 12px"><span style="font-size:10px;color:'+(pnl>=0?'var(--green)':'var(--red)')+'">'+( pnl>=0?'● Activa':'● En pérdida')+'</span></td>';
+    html+='<td style="padding:10px 12px" onclick="event.stopPropagation()"><div style="display:flex;gap:6px"><button class="btn sm" onclick="openAccountModal(\''+a.id+'\')"><i class="ti ti-edit" style="font-size:11px"></i></button><button class="btn sm danger" onclick="deleteAccount(\''+a.id+'\')"><i class="ti ti-trash" style="font-size:11px"></i></button></div></td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+}
+
 function renderAccountsPage(){
   var grid=document.getElementById('accounts-grid');if(!grid)return;
   if(!accounts.length){grid.innerHTML='<div style="grid-column:1/-1"><div class="empty-state"><i class="ti ti-wallet"></i><div>Sin cuentas aun</div><button class="btn primary" style="margin-top:16px" onclick="openAccountModal()"><i class="ti ti-plus"></i>Crear primera cuenta</button></div></div>';return;}
+  if(accountView==='table'){var tw=document.getElementById('accounts-table-wrap');if(tw)tw.style.display='';grid.style.display='none';renderAccountsTable();return;}else{var tw=document.getElementById('accounts-table-wrap');if(tw)tw.style.display='none';grid.style.display='';}
   grid.innerHTML=accounts.map(function(a){
     var pnl=getAccPnl(a.id),bal=getAccBal(a.id),at=trades.filter(function(t){return t.accountId===a.id;});
     var wr=at.length?(at.filter(function(t){return t.result==='win';}).length/at.length*100).toFixed(1):0;
@@ -3275,17 +3354,27 @@ function renderEquity(fTrades){
   var cum=0;var labels=sorted.map(function(x){return x.entryDate?x.entryDate.slice(5,10):'-';});
   var data=sorted.map(function(x){cum+=(x.pnl||0);return parseFloat(cum.toFixed(2));});
   if(eqChart)eqChart.destroy();
-  var eqGrad=ctx.getContext('2d').createLinearGradient(0,0,0,ctx.offsetHeight||200);
-  var maxPos=Math.max.apply(null,data.concat([0]));
-  var minVal=Math.min.apply(null,data.concat([0]));
-  var range=maxPos-minVal||1;
-  var zeroRatio=maxPos/range;
-  zeroRatio=Math.max(0,Math.min(1,zeroRatio));
-  eqGrad.addColorStop(0,'rgba(0,200,100,0.25)');
-  if(zeroRatio>0&&zeroRatio<1){eqGrad.addColorStop(zeroRatio,'rgba(0,200,100,0.05)');eqGrad.addColorStop(zeroRatio,'rgba(255,60,80,0.05)');}
-  eqGrad.addColorStop(1,'rgba(255,60,80,0.25)');
   var lastVal=data[data.length-1]||0;
-  eqChart=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{label:'Equity',data:data,borderColor:lastVal>=0?'#00d4ff':'#ff4560',backgroundColor:eqGrad,fill:true,tension:.4,pointRadius:3,pointBackgroundColor:function(c){return (c.raw||0)>=0?'#00c864':'#ff4560';},pointBorderColor:'#05070f',pointBorderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:8,color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}}}}}});
+  eqChart=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{label:'Equity',data:data,
+    borderColor:lastVal>=0?'#00c864':'#ff4560',
+    backgroundColor:function(ctx){
+      var chart=ctx.chart;var chartArea=chart.chartArea;
+      if(!chartArea)return 'rgba(0,200,100,0.08)';
+      var c2d=chart.ctx;var yScale=chart.scales.y;
+      var yZero=yScale.getPixelForValue(0);
+      var top=chartArea.top;var bottom=chartArea.bottom;
+      var grad=c2d.createLinearGradient(0,top,0,bottom);
+      var zr=(yZero-top)/(bottom-top);zr=Math.max(0,Math.min(1,zr));
+      grad.addColorStop(0,'rgba(0,200,100,0.25)');
+      grad.addColorStop(Math.max(0,zr-0.001),'rgba(0,200,100,0.06)');
+      grad.addColorStop(Math.min(1,zr+0.001),'rgba(255,60,80,0.06)');
+      grad.addColorStop(1,'rgba(255,60,80,0.25)');
+      return grad;
+    },
+    fill:true,tension:.4,pointRadius:3,
+    pointBackgroundColor:function(c){return (c.raw||0)>=0?'#00c864':'#ff4560';},
+    pointBorderColor:'#05070f',pointBorderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:8,color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}}}}});
 }
 
 function renderRecent(fTrades){

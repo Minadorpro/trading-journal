@@ -1610,6 +1610,28 @@ function listenAccounts(){
   db.collection('users').doc(cu.uid).collection('accounts').orderBy('createdAt','asc').onSnapshot(function(snap){
     accounts=snap.docs.filter(function(d){return d.data().status!=='archived';}).map(function(d){return Object.assign({id:d.id},d.data());});
     populateSelects();renderAccountsPage();renderDashboard();
+    updateLiveIndicators();
+  });
+}
+
+function updateLiveIndicators(){
+  accounts.forEach(function(a){
+    var liveEl=document.getElementById('live-ind-'+a.id);
+    if(!liveEl)return;
+    var isOnline=a.liveOnline;
+    var stale=false;
+    if(isOnline&&a.liveUpdatedAt&&a.liveUpdatedAt.seconds){
+      var ageSec=Math.floor(Date.now()/1000)-a.liveUpdatedAt.seconds;
+      stale=ageSec>60;
+    }
+    if(isOnline&&!stale){
+      var fp=a.liveFloatingPnl||0;
+      var pos=a.liveOpenPositions||0;
+      liveEl.innerHTML='<span style="color:var(--green);font-size:9px;font-weight:700;letter-spacing:.5px">● LIVE</span>'
+        +(pos>0?'<br><span style="font-size:11px;font-weight:700;color:'+(fp>=0?'var(--green)':'var(--red)')+';">'+(fp>=0?'+':'')+'$'+Math.abs(fp).toFixed(2)+' float</span>':'');
+    } else {
+      liveEl.innerHTML='<span style="color:var(--muted2);font-size:9px">○ offline</span>';
+    }
   });
 }
 function listenTrades(){
@@ -2234,6 +2256,7 @@ function renderAccountsPage(){
       +'<span class="badge '+(a.type||'real')+'" style="font-size:10px">'+typeLabel+'</span>'
       +'<span style="font-size:11px;color:var(--muted);margin-left:2px">'+(a.broker||'')+'</span>'
       +'</div>'
+      +'<div id="live-ind-'+a.id+'" style="text-align:right;min-height:14px"></div>'
 
       +'<div style="font-size:22px;font-weight:700;letter-spacing:-1px;margin:8px 0 2px;color:'+(pnl>=0?'var(--green)':'var(--red)')+'">'+(a.currency||'USD')+' '+bal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div>'
       +'<div style="font-size:11px;color:var(--muted)">P&L: <span class="'+(pnl>=0?'pos':'neg')+'" style="font-weight:600">'+(pnl>=0?'+':'')+'$'+pnl.toFixed(2)+'</span></div>'

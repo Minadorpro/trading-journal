@@ -307,16 +307,7 @@ tr:hover td{background:var(--bg2)}
       <div id="page-dashboard" class="page active">
         <div class="hero-banner" style="margin-bottom:14px"><div><div style="font-size:11px;color:var(--cyan);text-transform:uppercase;letter-spacing:1px;font-weight:500;margin-bottom:4px">Rendimiento total</div><div id="hero-pnl" style="font-size:36px;font-weight:700;letter-spacing:-2px">$0.00</div><div id="hero-sub" style="font-size:12px;color:var(--muted);margin-top:4px">0 trades</div></div></div>
         <div class="grid4" id="kpi-cards"></div>
-        <div class="grid2"><div class="card"><div class="section-title">Curva de equity</div><div class="equity-wrap"><canvas id="equityChart"></canvas></div></div><div class="card"><div class="section-title">&#218;ltimos trades</div><div id="recent-trades-list"></div></div></div>
-        <div style="display:flex;justify-content:flex-end;margin-top:6px">
-          <select class="filter-input" id="db-filter-select" onchange="setDashFilter(this.value)" style="font-size:12px;padding:6px 10px">
-            <option value="all">Todas las cuentas</option>
-            <option value="real">Real</option>
-            <option value="instant">Real Instant</option>
-            <option value="demo">Demo</option>
-            <option value="challenge">Challenge</option>
-          </select>
-        </div>
+        <div class="grid2"><div class="card"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px"><div class="section-title" style="margin-bottom:0">Curva de equity</div><div style="display:flex;gap:6px;flex-wrap:wrap"><select class="filter-input" id="db-filter-type" onchange="setDashFilter()" style="font-size:11px;padding:5px 8px"><option value="all">Todas</option><option value="real">Real</option><option value="instant">Real Instant</option><option value="demo">Demo</option><option value="challenge">Challenge</option></select><select class="filter-input" id="db-filter-account" onchange="setDashFilter()" style="font-size:11px;padding:5px 8px"><option value="">Cuenta específica…</option></select></div></div><div class="equity-wrap"><canvas id="equityChart"></canvas></div></div><div class="card"><div class="section-title">&#218;ltimos trades</div><div id="recent-trades-list"></div></div></div>
       </div>
 
       <div id="page-accounts" class="page">
@@ -1043,7 +1034,7 @@ var auth=firebase.auth(),db=firebase.firestore();
 var cu=null,trades=[],accounts=[],tools=[],diarios=[],isAdmin=false;
 var editTradeId=null,editAccountId=null,editToolId=null,editDiarioId=null;
 var toolImgData='',toolImgsArr=[],diarioImgData='',toolTypeSelected='free',diarioTypeSelected='free';
-var dashFilter='all',calUnit='usd';
+var dashFilter='all',dashFilterAccount='',calUnit='usd';
 var customSyms=null;
 var emoOpen='',emoClose='',photoBeforeData='',photoAfterData='',toolImgData='';
 var eqChart=null,pairChart=null,dirChart=null,detailChartInst=null;
@@ -2003,6 +1994,39 @@ function checkAccountExpiry(){
   var now=new Date();
   accounts.forEach(function(a){
     if(a.status==='archived')return;
+
+    // --- Check DD breach (balance below DD level) ---
+    var ddPct=parseFloat(a.ddPct)||0;
+    if(ddPct>0){
+      var accTrades=trades.filter(function(t){return t.accountId===a.id;});
+      var currentBalance=(a.initialBalance||0)+accTrades.reduce(function(s,t){return s+(parseFloat(t.pnl)||0);},0);
+      var ddLevel;
+      if(a.ddType==='dynamic'){
+        var maxBal=accTrades.reduce(function(mx,t,i){
+          var bal=(a.initialBalance||0)+accTrades.slice(0,i+1).reduce(function(s2,t2){return s2+(parseFloat(t2.pnl)||0);},0);
+          return Math.max(mx,bal);
+        },(a.initialBalance||0));
+        ddLevel=maxBal*(1-ddPct/100);
+      } else {
+        ddLevel=(a.initialBalance||0)*(1-ddPct/100);
+      }
+      if(currentBalance<=ddLevel){
+        db.collection('users').doc(cu.uid).collection('accounts').doc(a.id).update({
+          status:'archived',
+          archivedAt:firebase.firestore.FieldValue.serverTimestamp(),
+          archiveReason:'Cuenta quemada — balance por debajo del DD máximo'
+        }).then(function(){
+          showToast('Cuenta "'+a.name+'" archivada — DD máximo alcanzado','red','🔥');
+          db.collection('users').doc(cu.uid).collection('accounts').get().then(function(snap){
+            accounts=snap.docs.filter(function(d){return d.data().status!=='archived';}).map(function(d){return Object.assign({id:d.id},d.data());});
+            renderAccountsPage();
+          });
+        });
+        return;
+      }
+    }
+
+    // --- Check time expiry ---
     if(a.timerMode!=='limit'||!a.endDate)return;
     var end=new Date(a.endDate+'T23:59:59');
     if(now<=end)return;
@@ -3335,22 +3359,70 @@ function saveTrade(){
 }
 function deleteTrade(id){if(!confirm('Eliminar este trade?'))return;db.collection('users').doc(cu.uid).collection('trades').doc(id).delete();}
 
-function setDashFilter(f){
-  dashFilter=f;
-  var sel=document.getElementById('db-filter-select');
-  if(sel&&sel.value!==f)sel.value=f;
+function setDashFilter(){
+  var typeEl=document.getElementById('db-filter-type');
+  var accEl=document.getElementById('db-filter-account');
+  dashFilter=typeEl?typeEl.value:'all';
+  dashFilterAccount=accEl?accEl.value:'';
+  // If a specific account is selected, reset type filter visually
+  if(dashFilterAccount&&typeEl)typeEl.value='all';
   renderDashboard();
 }
 
+function populateDashAccountSelect(){
+  if(!cu)return;
+  var sel=document.getElementById('db-filter-account');
+  if(!sel)return;
+  // Load all accounts including archived
+  db.collection('users').doc(cu.uid).collection('accounts').get().then(function(snap){
+    var all=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});
+    all.sort(function(a,b){return (a.name||'')>(b.name||'')?1:-1;});
+    sel.innerHTML='<option value="">Todas las cuentas</option>';
+    // Active first
+    var active=all.filter(function(a){return a.status!=='archived';});
+    var archived=all.filter(function(a){return a.status==='archived';});
+    if(active.length){
+      var g=document.createElement('optgroup');g.label='Activas';
+      active.forEach(function(a){var o=document.createElement('option');o.value=a.id;o.textContent=a.name+(a.broker?' · '+a.broker:'');g.appendChild(o);});
+      sel.appendChild(g);
+    }
+    if(archived.length){
+      var g2=document.createElement('optgroup');g2.label='Archivadas';
+      archived.forEach(function(a){var o=document.createElement('option');o.value=a.id;o.textContent='[A] '+a.name+(a.broker?' · '+a.broker:'');g2.appendChild(o);});
+      sel.appendChild(g2);
+    }
+  });
+}
+
 function renderDashboard(){
-  var activeIds=accounts.map(function(a){return a.id;});
+  if(cu&&document.getElementById('db-filter-account')){
+    var sel=document.getElementById('db-filter-account');
+    if(sel.options.length<=1)populateDashAccountSelect();
+  }
+  // If specific account selected — load its trades (may include archived account)
+  if(dashFilterAccount){
+    db.collection('users').doc(cu.uid).collection('trades').where('accountId','==',dashFilterAccount).get().then(function(snap){
+      var accTrades=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});
+      // Find account info (active or archived)
+      db.collection('users').doc(cu.uid).collection('accounts').doc(dashFilterAccount).get().then(function(doc){
+        var acc=doc.exists?[Object.assign({id:doc.id},doc.data())]:[];
+        _renderDashboardWith(acc,accTrades);
+      });
+    });
+    return;
+  }
   var filtAcc=dashFilter==='all'?accounts:accounts.filter(function(a){return a.type===dashFilter;});
   var accIds=filtAcc.map(function(a){return a.id;});
   var filtTrades=trades.filter(function(t){return accIds.indexOf(t.accountId)>=0;});
-  var total=filtTrades.reduce(function(s,t){return s+(t.pnl||0);},0),wins=filtTrades.filter(function(t){return t.result==='win';}).length;
+  _renderDashboardWith(filtAcc,filtTrades);
+}
+
+function _renderDashboardWith(filtAcc,filtTrades){
+  var total=filtTrades.reduce(function(s,t){return s+(parseFloat(t.pnl)||0);},0);
+  var wins=filtTrades.filter(function(t){return t.result==='win';}).length;
   var hp=document.getElementById('hero-pnl'),hs=document.getElementById('hero-sub');
   if(hp){hp.textContent=(total>=0?'+':'')+'$'+total.toFixed(2);hp.className=total>=0?'pos':'neg';}
-  if(hs)hs.textContent=filtTrades.length+' trades '+wins+' ganadores '+filtAcc.length+' cuenta'+(filtAcc.length!==1?'s':'');
+  if(hs)hs.textContent=filtTrades.length+' trades · '+wins+' ganadores · '+filtAcc.length+' cuenta'+(filtAcc.length!==1?'s':'');
   renderKPIs(filtTrades);renderEquity(filtTrades);renderRecent(filtTrades);
 }
 

@@ -757,7 +757,7 @@ tr:hover td{background:var(--bg2)}
       <div class="form-group" style="margin-bottom:10px"><label>Tipo de drawdown</label><select id="ac-dd-type" onchange="recalcGoals()"><option value="fixed">Fijo &mdash; siempre desde balance inicial</option><option value="eod">EOD Trail &mdash; trailing al cierre del d&iacute;a</option><option value="dynamic">Intraday Trail &mdash; sigue el m&aacute;ximo en tiempo real</option></select></div>
       <div class="form-grid" style="margin-bottom:0">
         <div class="form-group"><label>Max drawdown (%)</label><input type="number" id="ac-dd-pct" placeholder="8" step="any" oninput="recalcGoals()"></div>
-        <div class="form-group"><label>Nivel de DD ($)</label><input type="number" id="ac-dd-level" placeholder="Auto" readonly style="color:var(--red)"></div>
+        <div class="form-group"><label>Pérdida máx. ($)</label><input type="number" id="ac-dd-level" placeholder="Auto" readonly style="color:var(--red)"></div>
         <div class="form-group"><label>Max daily loss (%)</label><input type="number" id="ac-dl-pct" placeholder="5" step="any"></div>
         <div class="form-group"><label>Daily loss ($)</label><input type="number" id="ac-dl-level" placeholder="Auto" readonly style="color:var(--red)"></div>
       </div>
@@ -1812,7 +1812,7 @@ function recalcGoals(){
   var type=document.getElementById('ac-type').value;
   var ddP=parseFloat(document.getElementById('ac-dd-pct').value)||0;
   var dlP=parseFloat(document.getElementById('ac-dl-pct').value)||0;
-  document.getElementById('ac-dd-level').value=ddP>0?(bal*(1-ddP/100)).toFixed(2):'';
+  document.getElementById('ac-dd-level').value=ddP>0?(bal*ddP/100).toFixed(2):'';
   document.getElementById('ac-dl-level').value=dlP>0?(bal*dlP/100).toFixed(2):'';
   if(type==='challenge'){var p1=parseFloat(document.getElementById('ac-p1-pct').value)||0;document.getElementById('ac-p1-amt').value=p1>0?(bal*p1/100).toFixed(2):'';var p2=parseFloat(document.getElementById('ac-p2-pct').value)||0;document.getElementById('ac-p2-amt').value=p2>0?(bal*p2/100).toFixed(2):'';}
   else{var gp=parseFloat(document.getElementById('ac-goal-pct').value)||0;document.getElementById('ac-goal-amt').value=gp>0?(bal*gp/100).toFixed(2):'';}

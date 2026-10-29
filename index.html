@@ -1787,6 +1787,15 @@ function renderAccountDetail(acc){
   var ctx=document.getElementById('detailChart');
   if(ctx){if(detailChartInst)detailChartInst.destroy();
     var ibLine=new Array(labels.length).fill(ib);
+    // Profit Target line
+    var targetAmt=0;
+    if(acc.type==='challenge'){
+      var curPhase=acc.currentPhase||1;
+      targetAmt=curPhase===1?(acc.p1Amt||0):(acc.p2Amt||0);
+    } else {
+      targetAmt=acc.goalAmt||0;
+    }
+    var targetLine=targetAmt>0?new Array(labels.length).fill(parseFloat((ib+targetAmt).toFixed(2))):null;
     detailChartInst=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[
       {label:'Balance',data:balPoints,
         borderColor:balPoints[balPoints.length-1]>=ib?'#00c864':'#ff4560',
@@ -1795,8 +1804,57 @@ function renderAccountDetail(acc){
         pointBorderColor:'#05070f',pointBorderWidth:2},
       {label:'Drawdown',data:ddPoints,borderColor:'#ff4560',fill:false,tension:0,pointRadius:0,borderDash:[4,3],borderWidth:1.5},
       {label:'Balance inicial',data:ibLine,borderColor:'#94a3b8',fill:false,tension:0,pointRadius:0,borderDash:[6,4],borderWidth:1.2},
-      {label:'Daily limit',data:acc.dlPct?dlPoints:dlPoints.map(function(){return null;}),borderColor:'#f0b429',fill:false,tension:0,pointRadius:0,borderDash:[2,3],borderWidth:1.2,hidden:!acc.dlPct}
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11},boxWidth:10}}},scales:{x:{ticks:{maxTicksLimit:8,color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}}}}},[{id:'grad',afterDraw:function(chart){var meta=chart.getDatasetMeta(0);if(!meta||!meta.data||meta.data.length<2)return;var ctx2=chart.ctx,yScale=chart.scales.y,ca=chart.chartArea;var yIb=yScale.getPixelForValue(ib);ctx2.save();ctx2.beginPath();meta.data.forEach(function(pt,i){i===0?ctx2.moveTo(pt.x,pt.y):ctx2.lineTo(pt.x,pt.y);});ctx2.lineTo(meta.data[meta.data.length-1].x,ca.bottom);ctx2.lineTo(meta.data[0].x,ca.bottom);ctx2.closePath();var grad=ctx2.createLinearGradient(0,ca.top,0,ca.bottom);var r=Math.max(0.001,Math.min(0.999,(yIb-ca.top)/(ca.bottom-ca.top)));grad.addColorStop(0,'rgba(0,200,100,0.2)');grad.addColorStop(Math.max(0,r-0.001),'rgba(0,200,100,0.06)');grad.addColorStop(Math.min(1,r+0.001),'rgba(255,60,80,0.06)');grad.addColorStop(1,'rgba(255,60,80,0.2)');ctx2.fillStyle=grad;ctx2.fill();ctx2.restore();}}]);  }
+      {label:'Daily limit',data:acc.dlPct?dlPoints:dlPoints.map(function(){return null;}),borderColor:'#f0b429',fill:false,tension:0,pointRadius:0,borderDash:[2,3],borderWidth:1.2,hidden:!acc.dlPct},
+      {label:'Profit Target',data:targetLine||ibLine.map(function(){return null;}),borderColor:'#00e5a0',fill:false,tension:0,pointRadius:0,borderDash:[8,4],borderWidth:2,hidden:!targetLine}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11},boxWidth:10}}},scales:{x:{ticks:{maxTicksLimit:8,color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.06)'}}}}},[{id:'grad',afterDraw:function(chart){
+  var meta=chart.getDatasetMeta(0);if(!meta||!meta.data||meta.data.length<2)return;
+  var ctx2=chart.ctx,yScale=chart.scales.y,ca=chart.chartArea;
+  // Gradient fill under balance line
+  var yIb=yScale.getPixelForValue(ib);
+  ctx2.save();ctx2.beginPath();
+  meta.data.forEach(function(pt,i){i===0?ctx2.moveTo(pt.x,pt.y):ctx2.lineTo(pt.x,pt.y);});
+  ctx2.lineTo(meta.data[meta.data.length-1].x,ca.bottom);ctx2.lineTo(meta.data[0].x,ca.bottom);ctx2.closePath();
+  var grad=ctx2.createLinearGradient(0,ca.top,0,ca.bottom);
+  var r=Math.max(0.001,Math.min(0.999,(yIb-ca.top)/(ca.bottom-ca.top)));
+  grad.addColorStop(0,'rgba(0,200,100,0.2)');grad.addColorStop(Math.max(0,r-0.001),'rgba(0,200,100,0.06)');
+  grad.addColorStop(Math.min(1,r+0.001),'rgba(255,60,80,0.06)');grad.addColorStop(1,'rgba(255,60,80,0.2)');
+  ctx2.fillStyle=grad;ctx2.fill();ctx2.restore();
+  // Profit Target label pill
+  if(targetLine){
+    var yTarget=yScale.getPixelForValue(targetLine[0]);
+    var targetVal='$'+(targetLine[0]).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    var labelText=targetVal+' Profit Target';
+    ctx2.save();
+    ctx2.font='bold 11px Inter,system-ui,sans-serif';
+    var tw=ctx2.measureText(labelText).width;
+    var px=ca.left+8,py=yTarget-10;
+    var pw=tw+14,ph=18,pr=4;
+    // pill background
+    ctx2.fillStyle='#00e5a0';
+    ctx2.beginPath();ctx2.roundRect(px,py,pw,ph,pr);ctx2.fill();
+    // arrow pointing right
+    ctx2.beginPath();ctx2.moveTo(px+pw,py+ph/2-4);ctx2.lineTo(px+pw+6,py+ph/2);ctx2.lineTo(px+pw,py+ph/2+4);ctx2.closePath();ctx2.fill();
+    // text
+    ctx2.fillStyle='#05070f';ctx2.textBaseline='middle';
+    ctx2.fillText(labelText,px+7,py+ph/2);
+    ctx2.restore();
+  }
+  // DD level label pill
+  var yDD=yScale.getPixelForValue(ddPoints[ddPoints.length-1]);
+  var ddVal='$'+ddPoints[ddPoints.length-1].toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  var ddLabelText=ddVal+' Max loss';
+  ctx2.save();
+  ctx2.font='bold 11px Inter,system-ui,sans-serif';
+  var dtw=ctx2.measureText(ddLabelText).width;
+  var dpx=ca.left+8,dpy=yDD+2;
+  var dpw=dtw+14,dph=18,dpr=4;
+  ctx2.fillStyle='#ff4560';
+  ctx2.beginPath();ctx2.roundRect(dpx,dpy,dpw,dph,dpr);ctx2.fill();
+  ctx2.beginPath();ctx2.moveTo(dpx+dpw,dpy+dph/2-4);ctx2.lineTo(dpx+dpw+6,dpy+dph/2);ctx2.lineTo(dpx+dpw,dpy+dph/2+4);ctx2.closePath();ctx2.fill();
+  ctx2.fillStyle='#ffffff';ctx2.textBaseline='middle';
+  ctx2.fillText(ddLabelText,dpx+7,dpy+dph/2);
+  ctx2.restore();
+}}]);  }
   var wins=accTrades.filter(function(t){return t.result==='win';});
   var wr=accTrades.length?(wins.length/accTrades.length*100).toFixed(1):0;
   var statsEl=document.getElementById('detail-stats');

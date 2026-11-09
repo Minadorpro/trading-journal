@@ -1628,7 +1628,7 @@ function updateLiveIndicators(){
 function listenTrades(){
   db.collection('users').doc(cu.uid).collection('trades').orderBy('createdAt','desc').onSnapshot(function(snap){
     trades=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});
-    renderDashboard();checkGoals();
+    renderDashboard();checkGoals();checkAccountExpiry();
     if(document.getElementById('page-trades').classList.contains('active'))renderTradesTable();
     if(document.getElementById('page-stats').classList.contains('active'))renderStats();
     if(p==='accounts'){checkAccountExpiry();}
@@ -1709,6 +1709,11 @@ function showPage(p){
 
 function openAccountDetail(aid){
   var acc=accounts.find(function(a){return a.id===aid;});if(!acc)return;
+  // Check expiry/burn before showing detail — may archive this account
+  checkAccountExpiry();
+  // Re-fetch in case it was just archived
+  var stillActive=accounts.find(function(a){return a.id===aid;});
+  if(!stillActive)return; // account was archived, don't open detail
   document.querySelectorAll('.page').forEach(function(e){e.classList.remove('active');});
   document.getElementById('page-account-detail').classList.add('active');
   document.getElementById('page-title').textContent='Detalle de cuenta';
@@ -1728,25 +1733,32 @@ function renderAccountDetail(acc){
   var balPoints=[],ddPoints=[],dlPoints=[],labels=[];
   var ddFrac=((acc.ddPct||8))/100;
   var dlFrac=((acc.dlPct||5))/100;
-  var dlAmt=ib*dlFrac; // Daily loss limit in $ (FTMO style: always from initial balance)
-  // Group trades by day for EOD daily loss calculation
-  var tradesByDay={};
+  var dlAmt=ib*dlFrac; // Daily loss limit in $ (fixed from initial balance)
+  // Pre-calculate balance at start of each day (cumulative PnL before that day's trades)
+  var dayStartBal={}; // day -> balance at start of day
+  var cumBeforeDay=0,lastDay='';
   accTrades.forEach(function(t){
     var day=t.entryDate?t.entryDate.slice(0,10):'';
-    if(!tradesByDay[day])tradesByDay[day]=0;
-    tradesByDay[day]+=(t.pnl||0);
+    if(day!==lastDay){dayStartBal[day]=ib+cumBeforeDay;lastDay=day;}
+    cumBeforeDay+=(parseFloat(t.pnl)||0);
   });
   accTrades.forEach(function(t,i){
-    cum+=(t.pnl||0);
+    cum+=(parseFloat(t.pnl)||0);
     var bal=ib+cum;
     maxBal=Math.max(maxBal,bal);
     balPoints.push(parseFloat(bal.toFixed(2)));
     ddPoints.push(acc.ddType==='dynamic'||acc.ddType==='eod'?parseFloat((maxBal*(1-ddFrac)).toFixed(2)):parseFloat((ib*(1-ddFrac)).toFixed(2)));
-    // Daily limit line: balance at start of day minus dlAmt (FTMO: fixed from initial balance each day)
-    dlPoints.push(parseFloat((bal-dlAmt).toFixed(2)));
+    // Daily limit: fixed floor = balance at start of day - daily limit amount
+    var day=t.entryDate?t.entryDate.slice(0,10):'';
+    var balAtDayStart=dayStartBal[day]!==undefined?dayStartBal[day]:ib;
+    dlPoints.push(parseFloat((balAtDayStart-dlAmt).toFixed(2)));
     labels.push(t.entryDate?t.entryDate.slice(5,10):'T'+(i+1));
   });
   if(!balPoints.length){balPoints.push(ib);ddPoints.push(ib*(1-ddFrac));dlPoints.push(ib-dlAmt);labels.push('Inicio');}
+  // Current day's daily floor for the pill label
+  var todayStr=new Date().toISOString().slice(0,10);
+  var todayStartBal=dayStartBal[todayStr]!==undefined?dayStartBal[todayStr]:(ib+cum);
+  var todayDlFloor=parseFloat((todayStartBal-dlAmt).toFixed(2));
   // Today's daily loss: sum of trades today
   var today=new Date().toISOString().slice(0,10);
   var todayPnl=accTrades.filter(function(t){return (t.entryDate||'').slice(0,10)===today;}).reduce(function(s,t){return s+(t.pnl||0);},0);
@@ -1819,41 +1831,36 @@ function renderAccountDetail(acc){
   grad.addColorStop(0,'rgba(0,200,100,0.2)');grad.addColorStop(Math.max(0,r-0.001),'rgba(0,200,100,0.06)');
   grad.addColorStop(Math.min(1,r+0.001),'rgba(255,60,80,0.06)');grad.addColorStop(1,'rgba(255,60,80,0.2)');
   ctx2.fillStyle=grad;ctx2.fill();ctx2.restore();
-  // Profit Target label pill
-  if(targetLine){
-    var yTarget=yScale.getPixelForValue(targetLine[0]);
-    var targetVal='$'+(targetLine[0]).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-    var labelText=targetVal+' Profit Target';
+  // Helper to draw a pill label with arrow
+  function drawPill(ctx2,x,y,text,bg,textColor,arrowDown){
     ctx2.save();
     ctx2.font='bold 11px Inter,system-ui,sans-serif';
-    var tw=ctx2.measureText(labelText).width;
-    var px=ca.left+8,py=yTarget-10;
+    var tw=ctx2.measureText(text).width;
     var pw=tw+14,ph=18,pr=4;
-    // pill background
-    ctx2.fillStyle='#00e5a0';
-    ctx2.beginPath();ctx2.roundRect(px,py,pw,ph,pr);ctx2.fill();
-    // arrow pointing right
-    ctx2.beginPath();ctx2.moveTo(px+pw,py+ph/2-4);ctx2.lineTo(px+pw+6,py+ph/2);ctx2.lineTo(px+pw,py+ph/2+4);ctx2.closePath();ctx2.fill();
-    // text
-    ctx2.fillStyle='#05070f';ctx2.textBaseline='middle';
-    ctx2.fillText(labelText,px+7,py+ph/2);
+    var py=arrowDown?y-ph-4:y+2; // above or below the line
+    ctx2.fillStyle=bg;
+    ctx2.beginPath();ctx2.roundRect(x,py,pw,ph,pr);ctx2.fill();
+    // arrow pointing right toward the line
+    ctx2.beginPath();ctx2.moveTo(x+pw,py+ph/2-4);ctx2.lineTo(x+pw+6,py+ph/2);ctx2.lineTo(x+pw,py+ph/2+4);ctx2.closePath();ctx2.fill();
+    ctx2.fillStyle=textColor;ctx2.textBaseline='middle';
+    ctx2.fillText(text,x+7,py+ph/2);
     ctx2.restore();
   }
-  // DD level label pill
-  var yDD=yScale.getPixelForValue(ddPoints[ddPoints.length-1]);
-  var ddVal='$'+ddPoints[ddPoints.length-1].toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  var ddLabelText=ddVal+' Max loss';
-  ctx2.save();
-  ctx2.font='bold 11px Inter,system-ui,sans-serif';
-  var dtw=ctx2.measureText(ddLabelText).width;
-  var dpx=ca.left+8,dpy=yDD+2;
-  var dpw=dtw+14,dph=18,dpr=4;
-  ctx2.fillStyle='#ff4560';
-  ctx2.beginPath();ctx2.roundRect(dpx,dpy,dpw,dph,dpr);ctx2.fill();
-  ctx2.beginPath();ctx2.moveTo(dpx+dpw,dpy+dph/2-4);ctx2.lineTo(dpx+dpw+6,dpy+dph/2);ctx2.lineTo(dpx+dpw,dpy+dph/2+4);ctx2.closePath();ctx2.fill();
-  ctx2.fillStyle='#ffffff';ctx2.textBaseline='middle';
-  ctx2.fillText(ddLabelText,dpx+7,dpy+dph/2);
-  ctx2.restore();
+  var pillX=ca.left+8;
+  // Profit Target pill (green, above line)
+  if(targetLine){
+    var yTarget=yScale.getPixelForValue(targetLine[0]);
+    drawPill(ctx2,pillX,yTarget,'$'+targetLine[0].toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' Profit Target','#00e5a0','#05070f',true);
+  }
+  // DD / Max loss pill (red, below line)
+  var ddFloorVal=ddPoints[ddPoints.length-1];
+  var yDD=yScale.getPixelForValue(ddFloorVal);
+  drawPill(ctx2,pillX,yDD,'$'+ddFloorVal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' Max loss','#ff4560','#ffffff',false);
+  // Daily limit pill (amber, below line) — only if dlPct set
+  if(acc.dlPct&&todayDlFloor){
+    var yDL=yScale.getPixelForValue(todayDlFloor);
+    drawPill(ctx2,pillX,yDL,'$'+todayDlFloor.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' Daily limit','#f0b429','#05070f',true);
+  }
 }}]);  }
   var wins=accTrades.filter(function(t){return t.result==='win';});
   var wr=accTrades.length?(wins.length/accTrades.length*100).toFixed(1):0;
@@ -2075,6 +2082,32 @@ function checkAccountExpiry(){
           archiveReason:'Cuenta quemada — balance por debajo del DD máximo'
         }).then(function(){
           showToast('Cuenta "'+a.name+'" archivada — DD máximo alcanzado','red','🔥');
+          db.collection('users').doc(cu.uid).collection('accounts').get().then(function(snap){
+            accounts=snap.docs.filter(function(d){return d.data().status!=='archived';}).map(function(d){return Object.assign({id:d.id},d.data());});
+            renderAccountsPage();
+          });
+        });
+        return;
+      }
+    }
+
+    // --- Check Daily Loss breach ---
+    var dlPct=parseFloat(a.dlPct)||0;
+    if(dlPct>0){
+      var ib=a.initialBalance||0;
+      var dlLimit=ib*dlPct/100; // max loss allowed in a day
+      var today=new Date().toISOString().slice(0,10);
+      var accTrades2=trades.filter(function(t){return t.accountId===a.id;});
+      var todayLoss=accTrades2.filter(function(t){
+        return (t.entryDate||'').slice(0,10)===today&&(parseFloat(t.pnl)||0)<0;
+      }).reduce(function(s,t){return s+(parseFloat(t.pnl)||0);},0); // negative number
+      if(Math.abs(todayLoss)>=dlLimit){
+        db.collection('users').doc(cu.uid).collection('accounts').doc(a.id).update({
+          status:'archived',
+          archivedAt:firebase.firestore.FieldValue.serverTimestamp(),
+          archiveReason:'Cuenta quemada — límite de pérdida diaria alcanzado ($'+Math.abs(todayLoss).toFixed(2)+' de $'+dlLimit.toFixed(2)+' permitido)'
+        }).then(function(){
+          showToast('Cuenta "'+a.name+'" archivada — daily loss limit alcanzado 🔥','red','🔥');
           db.collection('users').doc(cu.uid).collection('accounts').get().then(function(snap){
             accounts=snap.docs.filter(function(d){return d.data().status!=='archived';}).map(function(d){return Object.assign({id:d.id},d.data());});
             renderAccountsPage();
